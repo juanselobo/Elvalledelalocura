@@ -221,12 +221,13 @@ class SpriteManager {
       'portrait_juancho': 'assets/portrait_juancho.png',
       'portrait_lina': 'assets/portrait_lina.png',
       'portrait_brayan': 'assets/portrait_brayan.png',
+      'portrait_fuisioso': 'assets/portrait_fuisioso.png',
       'portrait_gloria': 'assets/portrait_gloria.png'
     };
 
     const keys = Object.keys(assetList);
     this.totalImages = keys.length;
-    const assetVersion = 'v1.4.0';
+    const assetVersion = 'v1.4.1';
 
     keys.forEach(key => {
       const img = new Image();

@@ -80,20 +80,20 @@ class MedellinGame {
         portrait: 'portrait_lina'
       },
       {
-        id: 'brayan',
-        name: 'EL BRAYAN',
-        alias: 'TITÁN DE MANRIQUE',
-        epithet: 'EL DEMOLEDOR DE LA LADERA',
-        style: 'Peso Pesado / Brawler Callejero',
-        bio: 'Fuerza bruta descomunal. Domina las esquinas de Manrique y La Cruz.',
-        special: '★ Cabezazo Demoledor & Gancho Sísmico',
-        speed: 3,
-        power: 5,
-        tech: 3,
+        id: 'fuisioso',
+        name: 'EL FUISIOSO',
+        alias: 'EL HINCHA VIRAL DE MEDELLÍN',
+        epithet: 'EL REY DEL CORTE 7',
+        style: 'Agilidad Nea / Barra Brava Callejera',
+        bio: '¡Todo bien, todo bonito, solo Nacional y fuisiosos! Flaco, eléctrico y letal con su botellazo y frenesí.',
+        special: '★ Furia Verdiblanca & Patada Fuisiosa',
+        speed: 5,
+        power: 4,
+        tech: 4,
         status: '🔒 NIVEL 3',
         ready: false,
-        color: '#e74c3c',
-        portrait: 'portrait_brayan'
+        color: '#27ae60',
+        portrait: 'portrait_fuisioso'
       },
       {
         id: 'gloria',
