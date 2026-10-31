@@ -220,11 +220,11 @@ class SpriteManager {
 
     const keys = Object.keys(assetList);
     this.totalImages = keys.length;
-    const cacheBust = `?v=${Date.now()}`;
+    const assetVersion = 'v1.3.1';
 
     keys.forEach(key => {
       const img = new Image();
-      img.src = assetList[key] + cacheBust;
+      img.src = assetList[key] + "?v=" + assetVersion;
       img.onload = () => {
         this.loadCount++;
         if (this.loadCount >= this.totalImages) {

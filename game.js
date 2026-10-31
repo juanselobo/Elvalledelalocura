@@ -16,11 +16,11 @@ class MedellinGame {
     this.canvas.width = this.vWidth;
     this.canvas.height = this.vHeight;
 
-    // Banda de profundidad de la calle / andén (Belt-Scrolling Z)
-    this.zMin = 255; // Límite superior (hacia los muros, rieles y terrazas)
-    this.zMax = 330; // Límite inferior (primer plano / bordillo de la plaza)
-    this.floorZ = 290; // Centro de la banda caminable
-    this.worldWidth = 2800; // Ancho total del escenario
+    // Banda de profundidad de la calle / andén (Belt-Scrolling Z calibrado al andén)
+    this.zMin = 286; // Límite superior exacto sobre el andén (evita flotar sobre muros/fondo)
+    this.zMax = 340; // Límite inferior del andén y calzada
+    this.floorZ = 310; // Centro de la banda caminable
+    this.worldWidth = 2600; // Ancho del escenario de Nivel 1 (culmina en las escaleras)
 
     // Sistema de etapas y misiones de Medellín
     this.currentStage = 1; // 1: Villa del Aburrá / Viaducto, 2: Mirador Metrocable
@@ -100,16 +100,16 @@ class MedellinGame {
     // Moto de Rappi aparcada en el andén
     this.parkedMoto = {
       x: 1180,
-      z: this.floorZ + 15
+      z: 330
     };
 
     // Palomas urbanas de Medellín (picoteando en el suelo y posadas en la baranda de parkour)
     this.pigeons = [
-      { x: 360, z: this.floorZ + 10, elevY: 0, flying: false, vx: 0, vy: 0, peckTimer: 0 },
-      { x: 820, z: this.zMin, elevY: 28, flying: false, vx: 0, vy: 0, peckTimer: 0 }, // Baranda de parkour
-      { x: 1350, z: this.floorZ - 8, elevY: 0, flying: false, vx: 0, vy: 0, peckTimer: 0 }, // Andén
-      { x: 1920, z: this.zMin, elevY: 28, flying: false, vx: 0, vy: 0, peckTimer: 0 }, // Baranda blanca
-      { x: 2320, z: this.floorZ + 15, elevY: 0, flying: false, vx: 0, vy: 0, peckTimer: 0 }  // Cerca al torniquete
+      { x: 360, z: 312, elevY: 0, flying: false, vx: 0, vy: 0, peckTimer: 0 },
+      { x: 820, z: 288, elevY: 28, flying: false, vx: 0, vy: 0, peckTimer: 0 }, // Baranda de parkour
+      { x: 1350, z: 308, elevY: 0, flying: false, vx: 0, vy: 0, peckTimer: 0 }, // Andén
+      { x: 1920, z: 288, elevY: 28, flying: false, vx: 0, vy: 0, peckTimer: 0 }, // Baranda blanca
+      { x: 2320, z: 320, elevY: 0, flying: false, vx: 0, vy: 0, peckTimer: 0 }  // Cerca al torniquete
     ];
 
     // Fauna urbana (Rata con De Todito / Cigarrillo o Cucarachas)
@@ -123,7 +123,7 @@ class MedellinGame {
     // Puesto de empanadas "Doña Gloria"
     this.npc = {
       x: 260,
-      z: this.floorZ - 12,
+      z: 296,
       talking: false,
       dialogue: "¡Juancho mijo! Hable conmigo [F / Botón ACCIÓN] antes de meterse a los rieles..."
     };
@@ -676,11 +676,11 @@ class MedellinGame {
     if (e.hp <= 0) {
       if (e.id === 'gamin' && !this.quest.gaminKo) {
         this.quest.gaminKo = true;
-        this.spawnCollectible('item_sacol', e.x, this.floorZ - 8, 'sacol');
+        this.spawnCollectible('item_sacol', e.x, e.z, 'sacol');
       } else if (e.id === 'rappi' && !this.quest.rappiKo) {
         this.quest.rappiKo = true;
-        this.spawnCollectible('item_ticket', e.x - 15, this.floorZ - 8, 'ticket');
-        this.spawnCollectible('delivery_box', e.x + 15, this.floorZ - 8, 'box');
+        this.spawnCollectible('item_ticket', e.x - 15, e.z, 'ticket');
+        this.spawnCollectible('delivery_box', e.x + 15, e.z, 'box');
       } else if (e.id === 'testigo') {
         this.handleTestigoDefeat(e);
       }
@@ -822,6 +822,10 @@ class MedellinGame {
     this.currentStage = stageNum;
     this.stageTransitionTimer = 1.0;
     if (window.updateActiveStageButton) window.updateActiveStageButton(stageNum);
+    this.worldWidth = stageNum === 1 ? 2600 : (stageNum === 2 ? 2650 : 2800);
+    this.zMin = 286;
+    this.zMax = 340;
+    this.floorZ = 310;
     this.player.x = stageNum === 2 ? 140 : (stageNum === 3 ? 200 : 80);
     this.player.z = this.floorZ;
     this.player.elevY = 0;
@@ -976,7 +980,12 @@ class MedellinGame {
     if (this.currentStage === 1) {
       const distToStairs = Math.abs(this.player.x - 2440);
       if (distToStairs < 85) {
-        this.switchStage(2);
+        if (this.quest.hasTicket) {
+          this.switchStage(2);
+        } else {
+          this.addFloatingText(2440, this.floorZ - 120, "¡NECESITAS EL TIQUETE DEL METROCABLE! 🔒", "#e74c3c");
+          if (window.retroAudio && window.retroAudio.playHit) window.retroAudio.playHit();
+        }
       }
     }
 
@@ -1001,7 +1010,7 @@ class MedellinGame {
       id: 'gamin',
       name: 'GAMÍN DEL ÉXITO',
       x: 750,
-      z: this.floorZ - 15,
+      z: 298,
       elevY: 0,
       vx: 0, vz: 0, vy: 0,
       width: 40, height: 96,
@@ -1013,14 +1022,14 @@ class MedellinGame {
       patrolStartX: 620, patrolEndX: 950,
       patrolDir: -1,
       speedX: 95, speedZ: 55,
-      zFlankOffset: -14,
+      zFlankOffset: -12,
       invulnerableTimer: 0, starsAngle: 0
     });
     this.enemies.push({
       id: 'rappi',
       name: 'RAPPI-GAMÍN',
       x: 1450,
-      z: this.floorZ + 15,
+      z: 326,
       elevY: 0,
       vx: 0, vz: 0, vy: 0,
       width: 40, height: 96,
@@ -1032,7 +1041,7 @@ class MedellinGame {
       patrolStartX: 1250, patrolEndX: 1650,
       patrolDir: -1,
       speedX: 105, speedZ: 60,
-      zFlankOffset: 16,
+      zFlankOffset: 14,
       throwCooldown: 3.2,
       invulnerableTimer: 0, starsAngle: 0
     });
@@ -1137,10 +1146,25 @@ class MedellinGame {
       return;
     }
 
-    // Transición automática al subir las escaleras en Nivel 1
-    if (this.currentStage === 1 && this.player.x >= 2430) {
-      this.switchStage(2);
-      return;
+    // Transición y bloqueo en escaleras de Nivel 1
+    if (this.currentStage === 1) {
+      if (this.quest.hasTicket) {
+        if (this.player.x >= 2435) {
+          this.switchStage(2);
+          return;
+        }
+      } else {
+        // Bloquear el paso a las escaleras si no tiene el tiquete
+        if (this.player.x >= 2405) {
+          this.player.x = 2405;
+          if (this.player.vx > 0) this.player.vx = 0;
+          if (!this.lastStairsAlert || Date.now() - this.lastStairsAlert > 2200) {
+            this.lastStairsAlert = Date.now();
+            this.addFloatingText(2400, this.floorZ - 120, "¡NECESITAS EL TIQUETE DEL METROCABLE! 🔒", "#e74c3c");
+            if (window.retroAudio && window.retroAudio.playHit) window.retroAudio.playHit();
+          }
+        }
+      }
     }
 
     // Salto de fe automático hacia el vacío de la canalización en Nivel 2 (sin oprimir botón)
@@ -1438,7 +1462,8 @@ class MedellinGame {
     if (!this.quest.talkedGloria && p.x > 460) {
       p.x = 460;
       p.vx = 0;
-      if (Math.random() < 0.04) {
+      if (!this.lastGloriaAlert || Date.now() - this.lastGloriaAlert > 2200) {
+        this.lastGloriaAlert = Date.now();
         this.addFloatingText(460, p.z - 120, "¡HABLA CON DOÑA GLORIA! [F / ACCIÓN]", "#f1c40f");
       }
     }
@@ -2377,19 +2402,20 @@ class MedellinGame {
     // Plataforma / Andén base (en Nivel 2 termina en x=2430 abriendo un vacío real hacia el canal)
     if (!isStage3) {
       const groundImg = window.spriteManager.getImage('ground_platform');
-    const maxGroundX = isStage2 ? 2430 : this.worldWidth;
-    if (groundImg && groundImg.complete) {
-      const gw = groundImg.naturalWidth || 640;
-      for (let gx = 0; gx < maxGroundX; gx += gw) {
-        const drawW = Math.min(gw, maxGroundX - gx);
-        if (drawW > 0) {
-          ctx.drawImage(groundImg, 0, 0, drawW, groundImg.naturalHeight, gx, 280, drawW, groundImg.naturalHeight);
+      const maxGroundX = isStage2 ? 2430 : this.worldWidth;
+      const groundH = this.vHeight - 280; // 80px: cubre exactamente de Y=280 a Y=360 sin huecos inferiores
+      if (groundImg && groundImg.complete) {
+        const gw = groundImg.naturalWidth || 640;
+        for (let gx = 0; gx < maxGroundX; gx += gw) {
+          const drawW = Math.min(gw, maxGroundX - gx);
+          if (drawW > 0) {
+            ctx.drawImage(groundImg, 0, 0, drawW, groundImg.naturalHeight, gx, 280, drawW, groundH);
+          }
         }
+      } else {
+        ctx.fillStyle = '#9b3e2a';
+        ctx.fillRect(0, 280, maxGroundX, groundH);
       }
-    } else {
-      ctx.fillStyle = '#9b3e2a';
-      ctx.fillRect(0, 280, maxGroundX, 80);
-    }
 
     // Marcadores de lluvia de biblias en el suelo
     this.boss.rainWarnings.forEach(rw => {
@@ -3003,14 +3029,17 @@ class MedellinGame {
 
   drawEmpanadaCart(ctx, x, y) {
     window.spriteManager.drawSprite(ctx, 'empanadas_cart', x - 25, y, true);
-    const isPacing = Math.floor(Date.now() / 300) % 6 < 3;
-    const gloriaSprite = isPacing ? 'gloria_idle' : 'gloria_walk1';
-    window.spriteManager.drawSprite(ctx, gloriaSprite, x + 35, y, false);
+    
+    // Doña Gloria respira sutilmente de pie atendiendo el puesto (sin tirones de caminata estática)
+    const breathe = Math.sin(Date.now() / 320);
+    const gScaleY = 1.0 + breathe * 0.018;
+    const gScaleX = 1.0 - breathe * 0.01;
+    window.spriteManager.drawSprite(ctx, 'gloria_idle', x + 35, y, false, 1.0, 0, gScaleX, gScaleY);
     window.spriteManager.drawSprite(ctx, 'item_tinto', x - 10, y - 52, true);
 
     if (Math.abs(this.player.x - x) < 80) {
       ctx.fillStyle = '#f1c40f';
-      ctx.fillRect(x - 20, y - 110, 96, 18);
+      ctx.fillRect(x - 20, y - 110, 100, 18);
       ctx.fillStyle = '#000000';
       ctx.font = 'bold 9px monospace';
       ctx.fillText("[F / ACCIÓN] HABLAR", x - 16, y - 98);
@@ -3036,20 +3065,33 @@ class MedellinGame {
       const sh = Math.floor(sw * (img.naturalHeight / img.naturalWidth));
       ctx.drawImage(img, x - 40, z - sh + 20, sw, sh);
 
-      // Prompt sutil si el jugador está cerca
+      // Prompt sutil según estado de la misión
       const dist = Math.abs(this.player.x - x);
       if (dist < 75) {
         const pulse = Math.sin(Date.now() / 140) * 0.25 + 0.75;
-        ctx.fillStyle = 'rgba(10, 10, 25, 0.9)';
-        ctx.fillRect(x - 55, z - 105, 110, 22);
-        ctx.strokeStyle = `rgba(241, 196, 15, ${pulse})`;
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(x - 55, z - 105, 110, 22);
+        if (this.quest.hasTicket) {
+          ctx.fillStyle = 'rgba(10, 10, 25, 0.9)';
+          ctx.fillRect(x - 65, z - 105, 130, 22);
+          ctx.strokeStyle = `rgba(46, 204, 113, ${pulse})`;
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(x - 65, z - 105, 130, 22);
 
-        ctx.fillStyle = '#f1c40f';
-        ctx.font = '900 8px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText("SUBIR ESCALERAS ↗", x, z - 91);
+          ctx.fillStyle = '#2ecc71';
+          ctx.font = '900 8px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText("¡SUBIR ESCALERAS! ↗", x, z - 91);
+        } else {
+          ctx.fillStyle = 'rgba(10, 10, 25, 0.9)';
+          ctx.fillRect(x - 70, z - 105, 140, 22);
+          ctx.strokeStyle = `rgba(231, 76, 60, ${pulse})`;
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(x - 70, z - 105, 140, 22);
+
+          ctx.fillStyle = '#e74c3c';
+          ctx.font = '900 7.5px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText("🔒 TIQUETE REQUERIDO", x, z - 91);
+        }
       }
       ctx.restore();
     }
