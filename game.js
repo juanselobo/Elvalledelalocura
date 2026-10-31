@@ -893,7 +893,7 @@ class MedellinGame {
     this.boss.phaseTransitionTimer = 0;
     this.boss.screenShake = 0;
     this.boss.flashTimer = 0;
-    if (stageNum === 3) this.cameraX = 0;
+    this.cameraX = 0;
     this.boss.rainWarnings = [];
     this.boss.shockwaves = [];
     this.boss.defeated = false;
@@ -3122,16 +3122,23 @@ class MedellinGame {
     const img = window.spriteManager.getImage('stairs_level1');
     if (img && img.complete) {
       ctx.save();
-      // Sombra suave en el suelo integrada con el andén
-      ctx.fillStyle = 'rgba(10, 10, 15, 0.5)';
+      const sw = 160;
+      const sh = Math.floor(sw * (img.naturalHeight / img.naturalWidth));
+      const drawX = x - 40;
+      const drawY = z - sh + 10;
+
+      // Contact shadow along the base of the stairs and brick wall
+      ctx.fillStyle = 'rgba(10, 15, 25, 0.45)';
       ctx.beginPath();
-      ctx.ellipse(x + 20, z + 5, 80, 12, 0, 0, Math.PI * 2);
+      ctx.ellipse(drawX + sw * 0.5, z + 6, sw * 0.48, 8, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Escaleras pixel art CPS3 / Neo Geo nativas subiendo a la derecha (espejadas correctamente)
-      const sw = 150;
-      const sh = Math.floor(sw * (img.naturalHeight / img.naturalWidth));
-      ctx.drawImage(img, x - 40, z - sh + 20, sw, sh);
+      // Subtle base occlusion directly where wall and steps meet sidewalk
+      ctx.fillStyle = 'rgba(5, 5, 10, 0.35)';
+      ctx.fillRect(drawX + 15, z - 2, sw - 25, 6);
+
+      // Escaleras pixel art CPS3 / Neo Geo nativas subiendo hacia el Mirador
+      ctx.drawImage(img, drawX, drawY, sw, sh);
 
       // Prompt sutil según estado de la misión
       const dist = Math.abs(this.player.x - x);
@@ -3139,26 +3146,26 @@ class MedellinGame {
         const pulse = Math.sin(Date.now() / 140) * 0.25 + 0.75;
         if (this.quest.hasTicket) {
           ctx.fillStyle = 'rgba(10, 10, 25, 0.9)';
-          ctx.fillRect(x - 65, z - 105, 130, 22);
+          ctx.fillRect(x - 65, z - 130, 130, 22);
           ctx.strokeStyle = `rgba(46, 204, 113, ${pulse})`;
           ctx.lineWidth = 1.5;
-          ctx.strokeRect(x - 65, z - 105, 130, 22);
+          ctx.strokeRect(x - 65, z - 130, 130, 22);
 
           ctx.fillStyle = '#2ecc71';
           ctx.font = '900 8px monospace';
           ctx.textAlign = 'center';
-          ctx.fillText("¡SUBIR ESCALERAS! ↗", x, z - 91);
+          ctx.fillText('¡SUBIR ESCALERAS! ↗', x, z - 116);
         } else {
           ctx.fillStyle = 'rgba(10, 10, 25, 0.9)';
-          ctx.fillRect(x - 70, z - 105, 140, 22);
+          ctx.fillRect(x - 70, z - 130, 140, 22);
           ctx.strokeStyle = `rgba(231, 76, 60, ${pulse})`;
           ctx.lineWidth = 1.5;
-          ctx.strokeRect(x - 70, z - 105, 140, 22);
+          ctx.strokeRect(x - 70, z - 130, 140, 22);
 
           ctx.fillStyle = '#e74c3c';
           ctx.font = '900 7.5px monospace';
           ctx.textAlign = 'center';
-          ctx.fillText("🔒 TIQUETE REQUERIDO", x, z - 91);
+          ctx.fillText('🔒 TIQUETE REQUERIDO', x, z - 116);
         }
       }
       ctx.restore();
@@ -3169,15 +3176,19 @@ class MedellinGame {
     const img = window.spriteManager.getImage('stairs_landing_level2');
     if (img && img.complete) {
       ctx.save();
-      ctx.fillStyle = 'rgba(10, 10, 15, 0.5)';
+      const sw = 185;
+      const sh = Math.floor(sw * (img.naturalHeight / img.naturalWidth));
+      const drawX = x - 75;
+      const drawY = z - sh + 8;
+
+      // Contact shadow beneath landing structure
+      ctx.fillStyle = 'rgba(10, 15, 25, 0.42)';
       ctx.beginPath();
-      ctx.ellipse(x - 15, z + 5, 70, 12, 0, 0, Math.PI * 2);
+      ctx.ellipse(drawX + sw * 0.48, z + 6, sw * 0.46, 7, 0, 0, Math.PI * 2);
       ctx.fill();
 
       // Desembarque superior con escaleras reales descendiendo hacia la villa
-      const sw = 140;
-      const sh = Math.floor(sw * (img.naturalHeight / img.naturalWidth));
-      ctx.drawImage(img, x - 65, z - sh + 20, sw, sh);
+      ctx.drawImage(img, drawX, drawY, sw, sh);
       ctx.restore();
     }
   }
