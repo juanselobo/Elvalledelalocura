@@ -3547,7 +3547,7 @@ class MedellinGame {
     ctx.translate(rampStartX, rampStartY);
     ctx.rotate(slopeAngle);
 
-    // 1. CAPA RÁPIDA DE LA RIBERA SUPERIOR (Árboles, bancos del Nivel 2, barandas y huecos transparentes)
+    // 1. CAPA RAPIDA DE LA RIBERA SUPERIOR (Baranda limpia, bancos y farol del Nivel 2, sin arbolitos)
     const promW = 1024;
     const scrollPromenade = Math.floor((this.canal.distance * 4.6) % promW);
     const promImg = window.spriteManager.getImage('canal_upper_promenade');
