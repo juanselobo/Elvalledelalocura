@@ -803,6 +803,7 @@ class MedellinGame {
     this.boss.phaseTransitionTimer = 0;
     this.boss.screenShake = 0;
     this.boss.flashTimer = 0;
+    if (stageNum === 3) this.cameraX = 0;
     this.boss.rainWarnings = [];
     this.boss.shockwaves = [];
     this.boss.defeated = false;
@@ -2323,11 +2324,14 @@ class MedellinGame {
       ctx.drawImage(bgNear, nearWidth - nearOffset, 0, nearWidth, this.vHeight);
     }
 
-    // 2. Plano de juego en coordenadas del mundo
+    // 2. Plano de juego en coordenadas del mundo (fijo y nítido)
     ctx.save();
-    const shakeX = this.boss.screenShake > 0 ? Math.floor((Math.random() - 0.5) * this.boss.screenShake * 10) : 0;
-    const shakeY = this.boss.screenShake > 0 ? Math.floor((Math.random() - 0.5) * this.boss.screenShake * 8) : 0;
-    ctx.translate(-Math.floor(this.cameraX) + shakeX, shakeY);
+    const isShaking = this.boss.screenShake > 0.04;
+    const shakeMagnitude = isShaking ? this.boss.screenShake : 0;
+    const shakeX = isShaking ? Math.round((Math.random() - 0.5) * shakeMagnitude * 8) : 0;
+    const shakeY = isShaking ? Math.round((Math.random() - 0.5) * shakeMagnitude * 6) : 0;
+    const camX = isStage3 ? 0 : Math.floor(this.cameraX);
+    ctx.translate(-camX + shakeX, shakeY);
 
     // Plataforma / Andén base (en Nivel 2 termina en x=2430 abriendo un vacío real hacia el canal)
     if (!isStage3) {
@@ -3316,6 +3320,9 @@ class MedellinGame {
     this.canal.acceleration = 6.75; // Incremento progresivo (~40s para alcanzar 300 km/h)
     this.canal.ratChompAnim = 0;
     this.canal.ratBiteHit = false;
+    this.boss.screenShake = 0;      // Asegurar pantalla 100% fija sin vibraciones residuales
+    this.boss.flashTimer = 0;
+    this.cameraX = 0;
     this.canal.loopLength = 3000;
     this.canal.obstacles = [
       { u: 650,  laneY: 10, type: 'gamin_dormido',     sprite: 'obs_gamin_dormido',     w: 74, h: 28, label: 'GAMIN DORMIDO', hit: false },
@@ -3340,6 +3347,14 @@ class MedellinGame {
 
   updateCanal(dt) {
     if (!this.canal.active) return;
+
+    // Decaimiento rápido del temblor de impacto (evita vibración permanente tras ser golpeado)
+    if (this.boss.screenShake > 0) {
+      this.boss.screenShake -= dt * 3.8;
+      if (this.boss.screenShake < 0.04) {
+        this.boss.screenShake = 0;
+      }
+    }
 
     // Aceleración Progresiva del Descenso: empieza a 30 km/h y escala hasta 300 km/h
     this.canal.elapsedTime = (this.canal.elapsedTime || 0) + dt;
@@ -3593,10 +3608,10 @@ class MedellinGame {
               drawY -= Math.sin((obs.hitTimer / 0.65) * Math.PI) * 28; // Salto en el aire al patearlo
             }
           }
-          ctx.drawImage(obsImg, obsX - drawW / 2, drawY, drawW, drawH);
+          ctx.drawImage(obsImg, Math.round(obsX - drawW / 2), Math.round(drawY), drawW, drawH);
         } else {
           ctx.fillStyle = '#e67e22';
-          ctx.fillRect(obsX - obs.w / 2, obsLocalY - obs.h, obs.w, obs.h);
+          ctx.fillRect(Math.round(obsX - obs.w / 2), Math.round(obsLocalY - obs.h), obs.w, obs.h);
         }
       }
     });
@@ -3633,8 +3648,8 @@ class MedellinGame {
       pSprite = 'player_kick_low';
     }
 
-    const pDrawX = p.slopeX || 260;
-    const pDrawY = 30 + (p.laneY || 16) - (p.elevY || 0);
+    const pDrawX = Math.round(p.slopeX || 260);
+    const pDrawY = Math.round(30 + (p.laneY || 16) - (p.elevY || 0));
 
     // Chispas de fricción bajo los tenis cuando raspa el concreto
     if (p.grounded) {
@@ -3682,8 +3697,8 @@ class MedellinGame {
       const ratSin = Math.sin(slopeAngle);
       const ratBob = Math.sin(this.canal.ratChompAnim * 3.2) * 5;
 
-      const ratDrawX = -175 + lungeDist * ratCos;
-      const ratDrawY = -55 + lungeDist * ratSin + ratBob;
+      const ratDrawX = Math.round(-175 + lungeDist * ratCos);
+      const ratDrawY = Math.round(-55 + lungeDist * ratSin + ratBob);
       const ratDrawW = 460;
       const ratDrawH = 425;
 
