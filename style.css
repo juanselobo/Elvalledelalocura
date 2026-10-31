@@ -221,16 +221,18 @@ body {
 
 /* ==========================================
    PANEL DE CONTROLES TÁCTILES GAME BOY COLOR
+   (Espacio central liberado, alineación hacia adentro)
    ========================================== */
 .gbc-controls-deck {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   align-items: center;
   width: 100%;
   margin-top: 14px;
-  padding: 4px 10px 10px 10px;
+  padding: 6px 14px 12px 14px;
   touch-action: manipulation;
   position: relative;
+  box-sizing: border-box;
 }
 
 /* LADO IZQUIERDO: CRUCETA D-PAD CLÁSICA */
@@ -238,6 +240,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  margin-left: 6px;
 }
 
 .gbc-dpad {
@@ -319,72 +322,29 @@ body {
   border-bottom: 1px solid #101115;
 }
 
-/* CENTRO: BOTONES SELECT & START INCLINADOS */
-.gbc-pills-section {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  justify-content: center;
-  transform: rotate(-25deg);
-  margin-top: 24px;
-}
-
-.gbc-pill-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.gbc-pill-btn {
-  width: 46px;
-  height: 14px;
-  border-radius: 8px;
-  background: #2b2e38;
-  border: 1px solid #15161b;
-  box-shadow: 
-    0 3px 0 #101115, 
-    inset 0 1px 1px rgba(255, 255, 255, 0.2);
-  cursor: pointer;
-  touch-action: none;
-  transition: transform 0.05s, box-shadow 0.05s;
-}
-
-.gbc-pill-btn:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 #101115;
-  background: #1b1c22;
-}
-
-.gbc-pill-text {
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 8px;
-  font-weight: 900;
-  color: #4b3d68;
-  letter-spacing: 0.8px;
-  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.1);
-}
-
-/* LADO DERECHO: BOTONES DE ACCIÓN */
+/* LADO DERECHO: BOTONES DE ACCIÓN (Desplazados hacia adentro / izquierda) */
 .gbc-action-section {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
+  margin-right: 14px;
 }
 
 .gbc-sub-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
-  margin-right: 12px;
+  justify-content: center;
 }
 
 .gbc-main-row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
+  justify-content: center;
   transform: rotate(-14deg);
+  margin-top: 4px;
 }
 
 .gbc-action-btn {
@@ -403,8 +363,8 @@ body {
 
 /* BOTÓN B (GOLPE) - Borgoña clásico */
 .btn-punch {
-  width: 52px;
-  height: 52px;
+  width: 50px;
+  height: 50px;
   background: radial-gradient(circle at 35% 35%, #a8233f, #6e1025);
   color: #ffffff;
   box-shadow: 0 5px 0 #3d0713, 0 8px 12px rgba(0, 0, 0, 0.65);
@@ -413,8 +373,8 @@ body {
 
 /* BOTÓN A (SALTO) - Rubí clásico */
 .btn-jump {
-  width: 54px;
-  height: 54px;
+  width: 52px;
+  height: 52px;
   background: radial-gradient(circle at 35% 35%, #d63031, #8f1718);
   color: #ffffff;
   box-shadow: 0 5px 0 #4f0b0c, 0 8px 12px rgba(0, 0, 0, 0.65);
@@ -423,8 +383,8 @@ body {
 
 /* BOTÓN ACCIÓN (HABLAR [F]) - Solicitado por el usuario */
 .btn-interact {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   background: radial-gradient(circle at 35% 35%, #f39c12, #d35400);
   color: #ffffff;
   box-shadow: 0 4px 0 #7e3200, 0 7px 10px rgba(0, 0, 0, 0.6);
@@ -433,8 +393,8 @@ body {
 
 /* BOTÓN ESPECIAL (360° [E]) */
 .btn-special {
-  width: 46px;
-  height: 46px;
+  width: 42px;
+  height: 42px;
   background: radial-gradient(circle at 35% 35%, #6c5ce7, #4834d4);
   color: #ffffff;
   box-shadow: 0 4px 0 #2c1b75, 0 7px 10px rgba(0, 0, 0, 0.6);
@@ -443,8 +403,8 @@ body {
 
 /* BOTÓN CORRER (RUN) */
 .btn-dash {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   background: radial-gradient(circle at 35% 35%, #34495e, #1e272e);
   color: #f1c40f;
   box-shadow: 0 4px 0 #0f1418, 0 6px 10px rgba(0, 0, 0, 0.5);
@@ -458,7 +418,7 @@ body {
 }
 
 .btn-main-label {
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
 }
@@ -475,18 +435,18 @@ body {
 .gbc-speaker-grille {
   position: absolute;
   bottom: 8px;
-  right: 18px;
+  right: 14px;
   display: flex;
   gap: 5px;
   transform: rotate(-35deg);
-  opacity: 0.4;
+  opacity: 0.35;
   pointer-events: none;
 }
 
 .gbc-speaker-grille span {
   display: block;
   width: 4px;
-  height: 22px;
+  height: 20px;
   background: #110820;
   border-radius: 2px;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.95), 0 1px 1px rgba(255, 255, 255, 0.1);
@@ -527,24 +487,28 @@ body {
 }
 
 /* ==========================================
-   OPTIMIZACIONES MÓVILES RESPONSIVAS
+   OPTIMIZACIONES MÓVILES RESPONSIVAS (MODO VERTICAL)
    ========================================== */
 @media (max-width: 650px) {
   body {
-    padding: 4px;
+    padding: 4px 2px 16px 2px;
   }
   .gbc-console {
     padding: 8px 6px 14px 6px;
-    border-radius: 14px 14px 36px 14px;
+    border-radius: 14px 14px 34px 14px;
     border-width: 3px;
   }
   .gbc-screen-bezel {
     padding: 6px 6px 8px 6px;
-    border-radius: 8px 8px 24px 8px;
+    border-radius: 8px 8px 22px 8px;
   }
   .gbc-controls-deck {
-    margin-top: 10px;
-    padding: 2px 4px 6px 4px;
+    margin-top: 8px;
+    padding: 2px 6px 8px 6px;
+    justify-content: space-around;
+  }
+  .gbc-dpad-section {
+    margin-left: 2px;
   }
   .gbc-dpad {
     width: 114px;
@@ -552,17 +516,32 @@ body {
     grid-template-columns: 38px 38px 38px;
     grid-template-rows: 38px 38px 38px;
   }
+  .gbc-action-section {
+    margin-right: 10px;
+    gap: 6px;
+  }
+  .gbc-sub-row {
+    gap: 6px;
+  }
+  .gbc-main-row {
+    gap: 10px;
+    transform: rotate(-12deg);
+  }
   .btn-punch, .btn-jump {
     width: 48px;
     height: 48px;
   }
-  .btn-interact, .btn-special {
+  .btn-interact {
     width: 42px;
     height: 42px;
   }
-  .btn-dash {
+  .btn-special {
     width: 38px;
     height: 38px;
+  }
+  .btn-dash {
+    width: 36px;
+    height: 36px;
   }
   .btn-main-label {
     font-size: 14px;
@@ -570,19 +549,63 @@ body {
   .btn-sub-label {
     font-size: 7px;
   }
-  .gbc-pills-section {
-    margin-top: 18px;
-    gap: 8px;
-  }
-  .gbc-pill-btn {
-    width: 38px;
-    height: 12px;
-  }
   .controls-legend {
     display: none;
   }
   .gbc-top-bar {
     justify-content: center;
-    gap: 6px;
+    gap: 5px;
+  }
+  .gbc-top-btn {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+  .gbc-stage-btn {
+    min-width: 48px;
+  }
+}
+
+/* Pantallas extra estrechas (iPhone SE / Android 360px portrait) */
+@media (max-width: 380px) {
+  .gbc-dpad {
+    width: 102px;
+    height: 102px;
+    grid-template-columns: 34px 34px 34px;
+    grid-template-rows: 34px 34px 34px;
+  }
+  .gbc-dpad-btn {
+    font-size: 11px;
+  }
+  .gbc-action-section {
+    margin-right: 6px;
+    gap: 5px;
+  }
+  .gbc-sub-row {
+    gap: 5px;
+  }
+  .gbc-main-row {
+    gap: 8px;
+  }
+  .btn-punch, .btn-jump {
+    width: 44px;
+    height: 44px;
+  }
+  .btn-interact {
+    width: 38px;
+    height: 38px;
+  }
+  .btn-special {
+    width: 34px;
+    height: 34px;
+  }
+  .btn-dash {
+    width: 32px;
+    height: 32px;
+  }
+  .btn-main-label {
+    font-size: 13px;
+  }
+  .btn-sub-label {
+    font-size: 6.5px;
   }
 }

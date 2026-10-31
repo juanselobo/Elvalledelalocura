@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Aventura en Medellín: La Villa del Aburrá - Game Boy Color Edition</title>
-  <link rel="stylesheet" href="style.css?v=1793407000">
+  <link rel="stylesheet" href="style.css?v=1793408000">
 </head>
 <body>
 
@@ -49,7 +49,7 @@
       </div>
     </div>
 
-    <!-- Panel de controles táctiles ergonómicos para celular -->
+    <!-- Panel de controles táctiles ergonómicos para celular (sin Select/Start, botones alineados hacia adentro) -->
     <div class="gbc-controls-deck" id="touchControls">
       
       <!-- LADO IZQUIERDO: Cruceta D-Pad clásica Game Boy -->
@@ -63,35 +63,26 @@
         </div>
       </div>
 
-      <!-- CENTRO: Botones inclinados SELECT y START -->
-      <div class="gbc-pills-section">
-        <div class="gbc-pill-container">
-          <button class="gbc-pill-btn" id="btnSelect" aria-label="Select / Música"></button>
-          <span class="gbc-pill-text">SELECT</span>
-        </div>
-        <div class="gbc-pill-container">
-          <button class="gbc-pill-btn" id="btnStart" aria-label="Start / Acción"></button>
-          <span class="gbc-pill-text">START</span>
-        </div>
-      </div>
-
-      <!-- LADO DERECHO: Botones de Acción (A, B, ACCIÓN, ESPECIAL, RUN) -->
+      <!-- LADO DERECHO: Botones de Acción (A, B, ACCIÓN, ESPECIAL, RUN) movidos hacia la izquierda -->
       <div class="gbc-action-section">
         
-        <!-- Fila superior de apoyo: ESPECIAL y BOTÓN DE ACCIÓN / HABLAR -->
+        <!-- Fila superior: ESPECIAL [E], ACCIÓN / HABLAR [F] y CORRER [RUN] -->
         <div class="gbc-sub-row">
           <button class="gbc-action-btn btn-special" id="btnKick" title="Especial 360°">
             <span class="btn-main-label">SP</span>
             <span class="btn-sub-label">GIRO</span>
           </button>
-          <!-- BOTÓN DE ACCIÓN / INTERACTUAR SOLICITADO POR EL USUARIO -->
           <button class="gbc-action-btn btn-interact" id="btnInteract" title="Acción / Hablar con Doña Gloria / Torniquete">
             <span class="btn-main-label">F</span>
             <span class="btn-sub-label">ACCIÓN</span>
           </button>
+          <button class="gbc-action-btn btn-dash" id="btnRun" title="Correr / Dash">
+            <span class="btn-main-label">⚡</span>
+            <span class="btn-sub-label">RUN</span>
+          </button>
         </div>
 
-        <!-- Fila principal inclinada: B (Golpe), A (Salto) y RUN estilo Game Boy Color -->
+        <!-- Fila principal inclinada: B (Golpe) y A (Salto) estilo Game Boy Color -->
         <div class="gbc-main-row">
           <button class="gbc-action-btn btn-punch" id="btnPunch" title="Golpe / Combo 4 golpes">
             <span class="btn-main-label">B</span>
@@ -100,10 +91,6 @@
           <button class="gbc-action-btn btn-jump" id="btnJump" title="Salto / Doble Salto">
             <span class="btn-main-label">A</span>
             <span class="btn-sub-label">SALTO</span>
-          </button>
-          <button class="gbc-action-btn btn-dash" id="btnRun" title="Correr / Dash">
-            <span class="btn-main-label">⚡</span>
-            <span class="btn-sub-label">RUN</span>
           </button>
         </div>
 
@@ -144,9 +131,9 @@
   </div>
 
   <!-- Scripts del juego -->
-  <script src="audio.js?v=1793407000"></script>
-  <script src="sprites.js?v=1793407000"></script>
-  <script src="game.js?v=1793407000"></script>
+  <script src="audio.js?v=1793408000"></script>
+  <script src="sprites.js?v=1793408000"></script>
+  <script src="game.js?v=1793408000"></script>
 
   <script>
     // Selector de niveles interactivo con estado activo
