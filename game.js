@@ -1021,14 +1021,14 @@ class MedellinGame {
       }
     }
 
-    // 2. Transición Nivel 1 -> Escaleras hacia arriba (x ~ 2440)
+    // 2. Transición Nivel 1 -> Escaleras hacia arriba (extremo derecho x ~ 2460)
     if (this.currentStage === 1) {
-      const distToStairs = Math.abs(this.player.x - 2440);
-      if (distToStairs < 85) {
+      const distToStairs = Math.abs(this.player.x - 2460);
+      if (distToStairs < 90) {
         if (this.quest.hasTicket) {
           this.switchStage(2);
         } else {
-          this.addFloatingText(2440, this.floorZ - 120, "¡NECESITAS EL TIQUETE DEL METROCABLE! 🔒", "#e74c3c");
+          this.addFloatingText(2410, this.floorZ - 120, "¡NECESITAS EL TIQUETE DEL METROCABLE! 🔒", "#e74c3c");
           if (window.retroAudio && window.retroAudio.playHit) window.retroAudio.playHit();
         }
       }
@@ -1192,21 +1192,27 @@ class MedellinGame {
       return;
     }
 
-    // Transición y bloqueo en escaleras de Nivel 1
+    // Transición y bloqueo en escaleras de Nivel 1 (extremo derecho de la pantalla)
     if (this.currentStage === 1) {
       if (this.quest.hasTicket) {
-        if (this.player.x >= 2435) {
+        // Al pisar y subir los escalones, elevación física progresiva
+        if (this.player.x >= 2415 && this.player.x < 2510) {
+          const climb = (this.player.x - 2415) / (2510 - 2415);
+          this.player.elevY = Math.max(this.player.elevY || 0, Math.round(climb * 22));
+        }
+        // Al cruzar el umbral superior hacia el Mirador
+        if (this.player.x >= 2510) {
           this.switchStage(2);
           return;
         }
       } else {
-        // Bloquear el paso a las escaleras si no tiene el tiquete
-        if (this.player.x >= 2405) {
-          this.player.x = 2405;
+        // Bloquear el paso al pie de las escaleras si no tiene el tiquete
+        if (this.player.x >= 2410) {
+          this.player.x = 2410;
           if (this.player.vx > 0) this.player.vx = 0;
           if (!this.lastStairsAlert || Date.now() - this.lastStairsAlert > 2200) {
             this.lastStairsAlert = Date.now();
-            this.addFloatingText(2400, this.floorZ - 120, "¡NECESITAS EL TIQUETE DEL METROCABLE! 🔒", "#e74c3c");
+            this.addFloatingText(2405, this.floorZ - 120, "¡NECESITAS EL TIQUETE DEL METROCABLE! 🔒", "#e74c3c");
             if (window.retroAudio && window.retroAudio.playHit) window.retroAudio.playHit();
           }
         }
@@ -2516,7 +2522,7 @@ class MedellinGame {
 
     // Estación Metrocable
     if (this.currentStage === 1) {
-      this.drawStairsLevel1(ctx, 2440, this.floorZ);
+      this.drawStairsLevel1(ctx, this.worldWidth, this.floorZ);
     } else if (this.currentStage === 2) {
       this.drawStairsLandingLevel2(ctx, 80, this.floorZ);
       this.drawCanalLedgeLevel2(ctx, 2450, this.floorZ);
@@ -3122,50 +3128,58 @@ class MedellinGame {
     const img = window.spriteManager.getImage('stairs_level1');
     if (img && img.complete) {
       ctx.save();
-      const sw = 160;
+      const sw = 185;
       const sh = Math.floor(sw * (img.naturalHeight / img.naturalWidth));
-      const drawX = x - 40;
-      const drawY = z - sh + 10;
+      const drawX = x - sw - 5;
+      const drawY = z - sh + 12;
 
-      // Contact shadow along the base of the stairs and brick wall
+      // Hueco / portal arquitectónico de salida hacia la ladera (transición oscura)
+      const portalGrad = ctx.createLinearGradient(drawX + 35, 0, drawX + sw, 0);
+      portalGrad.addColorStop(0, 'rgba(10, 8, 20, 0.0)');
+      portalGrad.addColorStop(0.35, 'rgba(10, 8, 20, 0.45)');
+      portalGrad.addColorStop(1, 'rgba(10, 8, 20, 0.85)');
+      ctx.fillStyle = portalGrad;
+      ctx.fillRect(drawX + 35, 140, sw - 35, z - 140);
+
+      // Sombra base de contacto
       ctx.fillStyle = 'rgba(10, 15, 25, 0.45)';
       ctx.beginPath();
       ctx.ellipse(drawX + sw * 0.5, z + 6, sw * 0.48, 8, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Subtle base occlusion directly where wall and steps meet sidewalk
+      // Oclusión rasante en la unión con las baldosas
       ctx.fillStyle = 'rgba(5, 5, 10, 0.35)';
-      ctx.fillRect(drawX + 15, z - 2, sw - 25, 6);
+      ctx.fillRect(drawX + 15, z - 2, sw - 15, 6);
 
       // Escaleras pixel art CPS3 / Neo Geo nativas subiendo hacia el Mirador
       ctx.drawImage(img, drawX, drawY, sw, sh);
 
       // Prompt sutil según estado de la misión
-      const dist = Math.abs(this.player.x - x);
-      if (dist < 75) {
+      const dist = Math.abs(this.player.x - (drawX + 45));
+      if (dist < 85) {
         const pulse = Math.sin(Date.now() / 140) * 0.25 + 0.75;
         if (this.quest.hasTicket) {
           ctx.fillStyle = 'rgba(10, 10, 25, 0.9)';
-          ctx.fillRect(x - 65, z - 130, 130, 22);
+          ctx.fillRect(drawX + 10, z - 145, 130, 22);
           ctx.strokeStyle = `rgba(46, 204, 113, ${pulse})`;
           ctx.lineWidth = 1.5;
-          ctx.strokeRect(x - 65, z - 130, 130, 22);
+          ctx.strokeRect(drawX + 10, z - 145, 130, 22);
 
           ctx.fillStyle = '#2ecc71';
           ctx.font = '900 8px monospace';
           ctx.textAlign = 'center';
-          ctx.fillText('¡SUBIR ESCALERAS! ↗', x, z - 116);
+          ctx.fillText('¡SUBIR ESCALERAS! ↗', drawX + 75, z - 131);
         } else {
           ctx.fillStyle = 'rgba(10, 10, 25, 0.9)';
-          ctx.fillRect(x - 70, z - 130, 140, 22);
+          ctx.fillRect(drawX + 5, z - 145, 140, 22);
           ctx.strokeStyle = `rgba(231, 76, 60, ${pulse})`;
           ctx.lineWidth = 1.5;
-          ctx.strokeRect(x - 70, z - 130, 140, 22);
+          ctx.strokeRect(drawX + 5, z - 145, 140, 22);
 
           ctx.fillStyle = '#e74c3c';
           ctx.font = '900 7.5px monospace';
           ctx.textAlign = 'center';
-          ctx.fillText('🔒 TIQUETE REQUERIDO', x, z - 116);
+          ctx.fillText('🔒 TIQUETE REQUERIDO', drawX + 75, z - 131);
         }
       }
       ctx.restore();
