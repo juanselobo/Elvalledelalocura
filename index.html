@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Aventura en Medellín: Rail-Walker & Gamines - HD Arcade</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="arcade-container">
+    <div class="arcade-header">
+      <div class="arcade-title">★ AVENTURA EN MEDELLÍN: LA VILLA DEL ABURRÁ ★</div>
+      <div class="arcade-subtitle">PARALAJE 3 CAPAS (CIUDAD CERCANA, LEJANA, LEJANÍSIMA) & SPRITES NATIVOS</div>
+    </div>
+
+    <!-- Pantalla del juego con renderizado nítido a 640x360 (16:9) -->
+    <div class="screen-wrapper" id="screenWrapper">
+      <canvas id="gameCanvas" tabindex="0" autofocus></canvas>
+    </div>
+
+    <!-- Barra de acciones rápidas -->
+    <div class="controls-bar">
+      <button class="btn-retro" id="btnToggleMusic">🎵 Música: OFF</button>
+      <button class="btn-retro" id="btnFullscreen">⛶ Pantalla Completa</button>
+      <button class="btn-retro" id="btnSpawnGamin">🍞 Gamín Éxito</button>
+      <button class="btn-retro" id="btnSpawnRappi">🛵 Rappi-Gamín</button>
+      <button class="btn-retro" id="btnSpawnCritter">🐀 Rata De Todito</button>
+      <button class="btn-retro" id="btnPlayCutscene" style="border-color: #f1c40f; color: #f1c40f; font-weight: bold;">🎬 Cómic Rata [4]</button>
+      <button class="btn-retro" id="btnStage1">1️⃣ Nivel 1</button>
+      <button class="btn-retro" id="btnStage2">2️⃣ Nivel 2</button>
+      <button class="btn-retro" id="btnStage3" style="border-color: #e74c3c; color: #e74c3c; font-weight: bold;">3️⃣ Esquema Nivel 3</button>
+    </div>
+
+    <!-- Controles táctiles virtuales para celular y tablets -->
+    <div class="touch-controls" id="touchControls">
+      <div class="touch-dpad-grid">
+        <button class="touch-btn btn-dpad-up" id="btnUp">▲<span>ARR</span></button>
+        <div class="touch-dpad-row">
+          <button class="touch-btn" id="btnLeft">◄<span>IZQ</span></button>
+          <button class="touch-btn" id="btnDown">▼<span>ABA</span></button>
+          <button class="touch-btn" id="btnRight">►<span>DER</span></button>
+        </div>
+      </div>
+      <div class="touch-actions">
+        <button class="touch-btn btn-jump-style" id="btnJump">⬆<span>SALTO</span></button>
+        <button class="touch-btn" id="btnRun">⚡<span>RUN</span></button>
+        <button class="touch-btn btn-punch-style" id="btnPunch">Q<span>GOLPE</span></button>
+        <button class="touch-btn btn-kick-style" id="btnKick">E<span>ESPECIAL</span></button>
+      </div>
+    </div>
+
+    <!-- Leyenda de controles de teclado para PC (Motor Streets of Rage) -->
+    <div class="controls-legend">
+      <div class="control-item">
+        <span class="key-badge">W / A / S / D</span> o <span class="key-badge">Flechas</span> Moverse en 8 direcciones por la calle
+      </div>
+      <div class="control-item">
+        <span class="key-badge">Doble Toque → →</span> o <span class="key-badge">Shift</span> Correr (Dash)
+      </div>
+      <div class="control-item">
+        <span class="key-badge">Doble Toque ↑ ↑ / ↓ ↓</span> Rodada evasiva vertical (Invulnerabilidad)
+      </div>
+      <div class="control-item">
+        <span class="key-badge">Espacio</span> Saltar | <span class="key-badge">Q en el aire</span> Patada Voladora K.O.
+      </div>
+      <div class="control-item">
+        <span class="key-badge">Q / J</span> Combo 4 Golpes: Puño Directo → Recto Cruzado → Patada Media → Gancho al Mentón K.O. | <span class="key-badge">S + Q</span> Patada Baja | <span class="key-badge">W + Q</span> Patada Media
+      </div>
+      <div class="control-item">
+        <span class="key-badge">Q al correr</span> Ataque Blitz (Embestida con hombro)
+      </div>
+      <div class="control-item">
+        <span class="key-badge">Caminar hacia enemigo</span> ¡AGARRE! (<span class="key-badge">Q</span>: Rodillazo | <span class="key-badge">E</span>: ¡SÚPLEX CALLEJERO!)
+      </div>
+      <div class="control-item">
+        <span class="key-badge">E</span> o <span class="key-badge">K</span> Especial 360° (Invulnerabilidad + Daño de área, consume Vida Verde SOR4)
+      </div>
+      <div class="control-item">
+        <span class="key-badge">F</span> Hablar con Doña Gloria / Torniquete
+      </div>
+      <div class="control-item">
+        <span class="key-badge">1 / 2</span> Cambiar Nivel | <span class="key-badge">M</span> Música Chiptune
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts del juego -->
+  <script src="audio.js?v=1793388200"></script>
+  <script src="sprites.js?v=1793406000"></script>
+  <script src="game.js?v=1793406000"></script>
+
+  <script>
+    // Conectar botones auxiliares de la interfaz
+    document.getElementById('btnToggleMusic').addEventListener('click', function() {
+      window.retroAudio.init();
+      const isPlaying = window.retroAudio.toggleBgm();
+      this.textContent = isPlaying ? "🎵 Música: ON" : "🎵 Música: OFF";
+      this.style.color = isPlaying ? "#2ecc71" : "#f1c40f";
+    });
+
+    document.getElementById('btnFullscreen').addEventListener('click', function() {
+      const el = document.getElementById('screenWrapper');
+      if (!document.fullscreenElement) {
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    });
+
+    document.getElementById('btnSpawnCritter').addEventListener('click', function() {
+      if (window.medellinGame) {
+        window.medellinGame.spawnCritter();
+      }
+    });
+
+    document.getElementById('btnSpawnGamin').addEventListener('click', function() {
+      if (window.medellinGame) {
+        const p = window.medellinGame.player;
+        window.medellinGame.enemies.push({
+          id: 'gamin',
+          name: 'GAMÍN DEL ÉXITO',
+          x: p.x + (p.facingRight ? 280 : -280),
+          z: p.z + (Math.random() * 24 - 12),
+          elevY: 0,
+          vx: 0,
+          vz: 0,
+          vy: 0,
+          width: 40,
+          height: 96,
+          facingRight: !p.facingRight,
+          state: 'charge',
+          stateTimer: 3.0,
+          frame: 0,
+          animTimer: 0,
+          hp: 100,
+          maxHp: 100,
+          patrolStartX: p.x - 200,
+          patrolEndX: p.x + 200,
+          patrolDir: p.facingRight ? -1 : 1,
+          speedX: 110,
+          speedZ: 65,
+          zFlankOffset: (Math.random() < 0.5 ? -15 : 15),
+          invulnerableTimer: 0,
+          starsAngle: 0
+        });
+        window.medellinGame.addFloatingText(p.x + (p.facingRight ? 280 : -280), p.z - 120, "¡OTRO GAMÍN!", "#e74c3c");
+      }
+    });
+
+    document.getElementById('btnSpawnRappi').addEventListener('click', function() {
+      if (window.medellinGame) {
+        const p = window.medellinGame.player;
+        window.medellinGame.enemies.push({
+          id: 'rappi',
+          name: 'RAPPI-GAMÍN',
+          x: p.x + (p.facingRight ? 320 : -320),
+          z: p.z + (Math.random() * 24 - 12),
+          elevY: 0,
+          vx: 0,
+          vz: 0,
+          vy: 0,
+          width: 40,
+          height: 96,
+          facingRight: !p.facingRight,
+          state: 'charge',
+          stateTimer: 3.0,
+          frame: 0,
+          animTimer: 0,
+          hp: 120,
+          maxHp: 120,
+          patrolStartX: p.x - 250,
+          patrolEndX: p.x + 250,
+          patrolDir: p.facingRight ? -1 : 1,
+          speedX: 120,
+          speedZ: 70,
+          zFlankOffset: (Math.random() < 0.5 ? -18 : 18),
+          invulnerableTimer: 0,
+          starsAngle: 0,
+          throwCooldown: 2.0
+        });
+        window.medellinGame.addFloatingText(p.x + (p.facingRight ? 320 : -320), p.z - 125, "¡LLEGÓ EL RAPPI!", "#e67e22");
+      }
+    });
+
+    document.getElementById('btnPlayCutscene').addEventListener('click', function() {
+      if (window.medellinGame) {
+        window.medellinGame.startRatCutscene();
+      }
+    });
+
+    document.getElementById('btnStage1').addEventListener('click', function() {
+      if (window.medellinGame) {
+        window.medellinGame.switchStage(1);
+      }
+    });
+
+    document.getElementById('btnStage2').addEventListener('click', function() {
+      if (window.medellinGame) {
+        window.medellinGame.switchStage(2);
+      }
+    });
+
+    document.getElementById('btnStage3').addEventListener('click', function() {
+      if (window.medellinGame) {
+        window.medellinGame.switchStage(3);
+      }
+    });
+
+    // Desbloqueo de audio nativo para móviles (iOS / Android) en el primer toque de pantalla
+    const unlockAudio = () => {
+      if (window.retroAudio && window.retroAudio.init) {
+        try { window.retroAudio.init(); } catch (err) {}
+      }
+    };
+    window.addEventListener('touchstart', unlockAudio, { passive: true, once: true });
+    window.addEventListener('click', unlockAudio, { once: true });
+  </script>
+</body>
+</html>

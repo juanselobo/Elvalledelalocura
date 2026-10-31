@@ -1,0 +1,237 @@
+/* style.css - Estilo Retro Arcade HD para Villa del Aburrá */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body {
+  background-color: #0c0a18;
+  color: #f1f2f6;
+  font-family: 'Courier New', Courier, monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding: 10px;
+}
+
+/* Contenedor principal estilo gabinete Arcade */
+.arcade-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(145deg, #1b162c, #0e0b1c);
+  border: 4px solid #3d2f5a;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9), 0 0 25px rgba(230, 126, 34, 0.25);
+  padding: 12px;
+  max-width: 960px;
+  width: 100%;
+}
+
+.arcade-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  border-bottom: 2px solid #2e2346;
+}
+
+.arcade-title {
+  font-size: 15px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: #f39c12;
+  text-shadow: 2px 2px #c0392b;
+}
+
+.arcade-subtitle {
+  font-size: 11px;
+  color: #a4b0be;
+}
+
+/* Pantalla del juego con renderizado de píxeles nítido a 640x360 (16:9) */
+.screen-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 640 / 360;
+  max-height: 65vh;
+  background-color: #000;
+  border: 3px solid #000;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.95);
+}
+
+#gameCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Barra de controles rápidos superiores */
+.controls-bar {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-retro {
+  background: #2a2046;
+  color: #f1c40f;
+  border: 2px solid #574b90;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-family: inherit;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  box-shadow: 0 3px #150f29;
+}
+
+.btn-retro:hover {
+  background: #463673;
+  color: #ffffff;
+}
+
+.btn-retro:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px #150f29;
+}
+
+/* Guía de controles para teclado */
+.controls-legend {
+  margin-top: 12px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid #2e2346;
+  border-radius: 6px;
+  padding: 8px 14px;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.control-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.key-badge {
+  background: #34495e;
+  color: #ecf0f1;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #7f8c8d;
+  font-weight: bold;
+  font-size: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Controles táctiles para Celular / Pantalla táctil */
+.touch-controls {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 12px;
+  padding: 4px 10px;
+  touch-action: manipulation;
+}
+
+.touch-dpad-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.touch-dpad-row {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-dpad-up {
+  width: 48px;
+  height: 48px;
+}
+
+.touch-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.touch-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #2c2547;
+  border: 3px solid #584988;
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px #130f24;
+  touch-action: none;
+}
+
+.touch-btn span {
+  font-size: 9px;
+  color: #a4b0be;
+}
+
+.touch-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px #130f24;
+  background: #e67e22;
+  border-color: #f39c12;
+}
+
+.btn-punch-style {
+  background: #962d22;
+  border-color: #c0392b;
+}
+
+.btn-kick-style {
+  background: #1f618d;
+  border-color: #2980b9;
+}
+
+.btn-jump-style {
+  background: #1e8449;
+  border-color: #27ae60;
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 2px;
+  }
+  .arcade-container {
+    padding: 6px;
+  }
+  .controls-legend {
+    display: none;
+  }
+}
