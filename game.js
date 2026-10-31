@@ -417,19 +417,28 @@ class MedellinGame {
       if (window.retroAudio && window.retroAudio.playRoll) window.retroAudio.playRoll();
       if (window.retroAudio && window.retroAudio.playJump) window.retroAudio.playJump();
 
-      const fxX = (this.currentStage === 3) ? (p.slopeX || 350) : p.x;
-      const fxY = (this.currentStage === 3) ? (30 + (p.laneY || 16) - (p.elevY || 0)) : (p.z - (p.elevY || 0) - 50);
-      this.addFloatingText(fxX, fxY - 15, "¡DOBLE SALTO AÉREO!", "#f1c40f");
-
-      // Anillo acrobático expansivo de giro en el aire
-      this.particles.push({
-        x: fxX,
-        y: fxY,
-        isRing: true,
-        life: 0.25,
-        maxLife: 0.25,
-        color: '#f1c40f'
-      });
+      if (this.currentStage === 3) {
+        const ringPos = this.canalToWorldCoords(p.slopeX || 350, 30 + (p.laneY || 16) - (p.elevY || 0) - 20);
+        this.addFloatingText(ringPos.x, ringPos.y - 15, "¡DOBLE SALTO AÉREO!", "#f1c40f");
+        this.particles.push({
+          x: ringPos.x,
+          y: ringPos.y,
+          color: '#f1c40f',
+          isRing: true,
+          life: 0.28,
+          maxLife: 0.28
+        });
+      } else {
+        this.addFloatingText(p.x, p.z - (p.elevY || 0) - 65, "¡DOBLE SALTO AÉREO!", "#f1c40f");
+        this.particles.push({
+          x: p.x,
+          y: p.z - (p.elevY || 0) - 50,
+          color: '#f1c40f',
+          isRing: true,
+          life: 0.28,
+          maxLife: 0.28
+        });
+      }
     }
   }
 
@@ -450,6 +459,16 @@ class MedellinGame {
   // ==========================================
   triggerAttack() {
     const p = this.player;
+
+    // Nivel 3: Descenso en canalización (patada de barrido o patada aérea para destruir obstáculos)
+    if (this.currentStage === 3) {
+      if (p.actionTimer <= 0 && p.action !== 'hurt') {
+        p.action = p.grounded ? 'kick' : 'jumpkick';
+        p.actionTimer = 0.32;
+        if (window.retroAudio && window.retroAudio.playKick) window.retroAudio.playKick();
+      }
+      return;
+    }
 
     // 1. Si está agarrando a un enemigo -> RODILLAZO
     if (p.action === 'grab' && p.grabbedEnemy) {
@@ -544,6 +563,32 @@ class MedellinGame {
   // ==========================================
   triggerSpecial() {
     const p = this.player;
+
+    // Nivel 3: Descenso en canalización (giro acrobático 360° en el aire que destruye obstáculos)
+    if (this.currentStage === 3) {
+      if (p.actionTimer <= 0 && p.action !== 'hurt') {
+        p.action = 'doublejump';
+        p.actionTimer = 0.42;
+        p.doubleJumpDuration = 0.42;
+        p.vy = -200;
+        p.grounded = false;
+        p.canDoubleJump = false;
+        p.doubleJumped = true;
+        if (window.retroAudio && window.retroAudio.playRoll) window.retroAudio.playRoll();
+        if (window.retroAudio && window.retroAudio.playJump) window.retroAudio.playJump();
+        const ringPos = this.canalToWorldCoords(p.slopeX || 350, 30 + (p.laneY || 16) - (p.elevY || 0) - 20);
+        this.addFloatingText(ringPos.x, ringPos.y - 15, "¡GIRO ACROBÁTICO 360°!", "#f1c40f");
+        this.particles.push({
+          x: ringPos.x,
+          y: ringPos.y,
+          color: '#f1c40f',
+          isRing: true,
+          life: 0.28,
+          maxLife: 0.28
+        });
+      }
+      return;
+    }
 
     // Si está agarrando a un enemigo -> SÚPLEX TRASERO / LANZAMIENTO
     if (p.action === 'grab' && p.grabbedEnemy) {
@@ -1125,6 +1170,7 @@ class MedellinGame {
 
     // Si estamos en el Nivel 3 (Canalización), actualizar física de bajada y partículas exclusivamente
     if (this.currentStage === 3) {
+      this.pollGamepads();
       this.updateCanal(dt);
 
       // Actualización de partículas arcade
@@ -2412,8 +2458,10 @@ class MedellinGame {
     ctx.save();
     const isShaking = this.boss.screenShake > 0.04;
     const shakeMagnitude = isShaking ? this.boss.screenShake : 0;
-    const shakeX = isShaking ? Math.round((Math.random() - 0.5) * shakeMagnitude * 8) : 0;
-    const shakeY = isShaking ? Math.round((Math.random() - 0.5) * shakeMagnitude * 6) : 0;
+    const shakeMultX = isStage3 ? 4 : 8;
+    const shakeMultY = isStage3 ? 3 : 6;
+    const shakeX = isShaking ? Math.round((Math.random() - 0.5) * shakeMagnitude * shakeMultX) : 0;
+    const shakeY = isShaking ? Math.round((Math.random() - 0.5) * shakeMagnitude * shakeMultY) : 0;
     const camX = isStage3 ? 0 : Math.floor(this.cameraX);
     ctx.translate(-camX + shakeX, shakeY);
 
@@ -3413,6 +3461,18 @@ class MedellinGame {
     ctx.restore();
   }
 
+  canalToWorldCoords(rx, ry) {
+    const rampStartX = -60;
+    const rampStartY = 110;
+    const slopeAngle = 0.36; // radianes (~20.6°)
+    const cosA = Math.cos(slopeAngle);
+    const sinA = Math.sin(slopeAngle);
+    return {
+      x: Math.round(rampStartX + rx * cosA - ry * sinA),
+      y: Math.round(rampStartY + rx * sinA + ry * cosA)
+    };
+  }
+
   initCanalDescent() {
     this.canal.active = true;
     this.canal.distance = 0;
@@ -3451,10 +3511,10 @@ class MedellinGame {
   updateCanal(dt) {
     if (!this.canal.active) return;
 
-    // Decaimiento rápido del temblor de impacto (evita vibración permanente tras ser golpeado)
+    // Decaimiento suave y rápido del temblor de impacto
     if (this.boss.screenShake > 0) {
-      this.boss.screenShake -= dt * 3.8;
-      if (this.boss.screenShake < 0.04) {
+      this.boss.screenShake -= dt * 4.5;
+      if (this.boss.screenShake < 0.02) {
         this.boss.screenShake = 0;
       }
     }
@@ -3484,9 +3544,10 @@ class MedellinGame {
         p.action = 'hurt';
         p.actionTimer = 0.45;
         p.slopeX = Math.min(460, p.slopeX + 80); // Empuje hacia adelante para escapar del mordisco
-        this.boss.screenShake = 0.95;
+        this.boss.screenShake = 0.75;
         if (window.retroAudio && window.retroAudio.playHit) window.retroAudio.playHit();
-        this.addFloatingText(p.slopeX, 60, "-25 HP ¡MORDISCO DE RATA COLOSAL!", "#e74c3c");
+        const bitePos = this.canalToWorldCoords(p.slopeX, 30 + (p.laneY || 16) - 35);
+        this.addFloatingText(bitePos.x, bitePos.y, "-25 HP ¡MORDISCO DE RATA COLOSAL!", "#e74c3c");
       }
     }
 
@@ -3567,9 +3628,7 @@ class MedellinGame {
         obs.hitTimer -= dt;
         if (obs.hitTimer <= 0) {
           obs.hit = false;
-          if (obs.hitType === 'kick') {
-            obs.u = (obs.u + loopLen) % (loopLen * 2);
-          }
+          obs.u = (obs.u + loopLen) % (loopLen * 2); // Recicla el obstáculo tanto en patada como en choque
         }
       }
 
@@ -3585,16 +3644,17 @@ class MedellinGame {
         // Interacción especial: Rebote elástico en colchón viejo
         if (obs.type === 'colchon_viejo' && !p.grounded && p.vy > 0 && p.elevY < obs.h + 20) {
           p.vy = -440;
-          this.addFloatingText(p.slopeX, 70, "+100 BOING (RESORTES)!", "#2ecc71");
+          const bouncePos = this.canalToWorldCoords(p.slopeX, 30 + (p.laneY || 16) - (p.elevY || 0) - 25);
+          this.addFloatingText(bouncePos.x, bouncePos.y, "+100 BOING (RESORTES)!", "#2ecc71");
           if (window.retroAudio && window.retroAudio.playJump) window.retroAudio.playJump();
-        } else if ((p.action === 'kick' || p.action === 'jumpkick') && p.actionTimer > 0) {
-          // Destrucción o desarme de obstáculo con patada
+        } else if ((p.action === 'kick' || p.action === 'jumpkick' || p.action === 'doublejump') && p.actionTimer > 0) {
+          // Destrucción o desarme de obstáculo con patada o giro acrobático
           if (!obs.hit) {
             obs.hit = true;
             obs.hitTimer = 0.65;
             obs.hitType = 'kick';
             this.score += 200;
-            this.boss.screenShake = 0.45;
+            this.boss.screenShake = 0.35;
             if (window.retroAudio && window.retroAudio.playHit) window.retroAudio.playHit();
             const hitLabels = {
               'taxista_cruceta': "+200 ¡DESARMADO (PATAS PA' ARRIBA)!",
@@ -3605,11 +3665,18 @@ class MedellinGame {
               'gallinazo': '+180 ¡DESPELUCADO / OJOS SALIDOS!'
             };
             const hitLabel = hitLabels[obs.type] || '+200 ¡DESTRUIDO!';
-            this.addFloatingText(obsX, 100, hitLabel, "#f1c40f");
+            const hitPos = this.canalToWorldCoords(obsX, 30 + obs.laneY - 35);
+            this.addFloatingText(hitPos.x, hitPos.y, hitLabel, "#f1c40f");
             for (let k = 0; k < 8; k++) {
+              const pPos = this.canalToWorldCoords(
+                obsX + (Math.random() - 0.5) * 20,
+                30 + obs.laneY - 12 + (Math.random() - 0.5) * 15
+              );
               this.particles.push({
-                x: obsX + (Math.random() - 0.5) * 40,
-                y: 120 + (Math.random() - 0.5) * 30,
+                x: pPos.x,
+                y: pPos.y,
+                vx: (Math.random() - 0.5) * 60,
+                vy: -30 - Math.random() * 50,
                 color: obs.type === 'inodoro_destruido' ? '#3498db' : '#f39c12',
                 size: 4,
                 life: 0.35,
@@ -3629,9 +3696,10 @@ class MedellinGame {
           p.invulnerableTimer = 0.85;
           p.action = 'hurt';
           p.actionTimer = 0.35;
-          this.boss.screenShake = 0.65;
+          this.boss.screenShake = 0.55;
           if (window.retroAudio && window.retroAudio.playHit) window.retroAudio.playHit();
-          this.addFloatingText(p.slopeX, 80, "-15 HP (" + obs.label + ")", "#e74c3c");
+          const crashPos = this.canalToWorldCoords(p.slopeX, 30 + (p.laneY || 16) - 30);
+          this.addFloatingText(crashPos.x, crashPos.y, "-15 HP (" + obs.label + ")", "#e74c3c");
         }
       }
     });
@@ -3704,8 +3772,16 @@ class MedellinGame {
           let drawH = obs.h;
           let drawY = obsLocalY - obs.h + 2;
           if (isHit) {
-            drawW = Math.round(obs.w * 1.3);
-            drawH = Math.round(obs.h * 1.3);
+            // Proporción de aspecto nativa del sprite para evitar cualquier aplastamiento o deformación
+            const aspect = (obsImg.naturalWidth && obsImg.naturalHeight) ? (obsImg.naturalWidth / obsImg.naturalHeight) : 1.0;
+            const targetDim = Math.max(obs.w, obs.h) * 1.08;
+            if (aspect >= 1.0) {
+              drawW = Math.round(targetDim);
+              drawH = Math.round(targetDim / aspect);
+            } else {
+              drawH = Math.round(targetDim);
+              drawW = Math.round(targetDim * aspect);
+            }
             drawY = obsLocalY - drawH + 2;
             if (obs.hitTimer > 0 && obs.hitType === 'kick') {
               drawY -= Math.sin((obs.hitTimer / 0.65) * Math.PI) * 28; // Salto en el aire al patearlo
@@ -3828,34 +3904,6 @@ class MedellinGame {
       ctx.stroke();
     }
 
-    // 7. Marcador HUD Retro Arcade Completo (Vida de Juancho + Telemetría de Bajada)
-    ctx.fillStyle = 'rgba(10, 15, 25, 0.88)';
-    ctx.fillRect(this.vWidth / 2 - 170, 8, 340, 26);
-    ctx.strokeStyle = '#f1c40f';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(this.vWidth / 2 - 170, 8, 340, 26);
-
-    // Barra de vida de Juancho
-    const hpRatio = Math.max(0, p.hp / (p.maxHp || 100));
-    ctx.fillStyle = '#c0392b';
-    ctx.fillRect(this.vWidth / 2 - 160, 14, 90, 14);
-    ctx.fillStyle = hpRatio > 0.4 ? '#2ecc71' : '#e74c3c';
-    ctx.fillRect(this.vWidth / 2 - 160, 14, 90 * hpRatio, 14);
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(this.vWidth / 2 - 160, 14, 90, 14);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 8px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText("JUANCHO", this.vWidth / 2 - 115, 24);
-
-    // Telemetría de descenso
-    ctx.fillStyle = '#f1c40f';
-    ctx.font = '900 9px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText("DESCENSO: " + Math.floor(this.canal.distance / 10) + "m | VEL: " + Math.round(this.canal.speed) + " KM/H", this.vWidth / 2 - 58, 24);
-
     ctx.restore();
   }
 
@@ -3895,8 +3943,38 @@ class MedellinGame {
   // HUD ARCADE: VIDA VERDE SOR4 & COMBOS
   // ==========================================
   drawHUD(ctx) {
-    if (this.currentStage === 3) return; // En Nivel 3, drawCanalStage3 maneja su propia telemetría arcade
     const p = this.player;
+
+    if (this.currentStage === 3) {
+      // Marcador HUD Retro Arcade Completo (Fijo, nunca sacudido por vibración de cámara)
+      ctx.fillStyle = 'rgba(10, 15, 25, 0.88)';
+      ctx.fillRect(this.vWidth / 2 - 170, 8, 340, 26);
+      ctx.strokeStyle = '#f1c40f';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(this.vWidth / 2 - 170, 8, 340, 26);
+
+      // Barra de vida de Juancho
+      const hpRatio = Math.max(0, p.hp / (p.maxHp || 100));
+      ctx.fillStyle = '#c0392b';
+      ctx.fillRect(this.vWidth / 2 - 160, 14, 90, 14);
+      ctx.fillStyle = hpRatio > 0.4 ? '#2ecc71' : '#e74c3c';
+      ctx.fillRect(this.vWidth / 2 - 160, 14, 90 * hpRatio, 14);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(this.vWidth / 2 - 160, 14, 90, 14);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 8px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText("JUANCHO", this.vWidth / 2 - 115, 24);
+
+      // Telemetría de descenso
+      ctx.fillStyle = '#f1c40f';
+      ctx.font = '900 9px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText("DESCENSO: " + Math.floor(this.canal.distance / 10) + "m | VEL: " + Math.round(this.canal.speed) + " KM/H", this.vWidth / 2 - 58, 24);
+      return;
+    }
 
     // 1. Barra de Vida de JUANCHO (1P)
     ctx.fillStyle = 'rgba(15, 12, 28, 0.88)';

@@ -220,7 +220,7 @@ class SpriteManager {
 
     const keys = Object.keys(assetList);
     this.totalImages = keys.length;
-    const assetVersion = 'v1.3.2';
+    const assetVersion = 'v1.3.3';
 
     keys.forEach(key => {
       const img = new Image();
