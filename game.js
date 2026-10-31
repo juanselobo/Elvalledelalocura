@@ -110,6 +110,22 @@ class MedellinGame {
         ready: false,
         color: '#f39c12',
         portrait: 'portrait_gloria'
+      },
+      {
+        id: 'fico',
+        name: 'EL ALCALDE',
+        alias: 'FICO GUTIÉRREZ',
+        epithet: 'EL GUARDIÁN DE LA ALCALDÍA',
+        style: 'Brawler Institucional / Choque de Orden',
+        bio: '¡Aquí estamos poniendo orden! Operativo sorpresa y mano dura contra los bandidos.',
+        special: '★ Mega-Operativo de Choque & Radio Policial',
+        speed: 3,
+        power: 4,
+        tech: 5,
+        status: '🔒 CAMPAÑA',
+        ready: false,
+        color: '#2980b9',
+        portrait: 'portrait_fico'
       }
     ];
 
@@ -353,7 +369,7 @@ class MedellinGame {
         const clickY = (e.clientY - rect.top) * (this.vHeight / rect.height);
 
         // Check if clicked on a character card
-        const cardW = 96, cardH = 126, gap = 14;
+        const cardW = 92, cardH = 126, gap = 12;
         const totalW = this.roster.length * cardW + (this.roster.length - 1) * gap;
         const startX = (this.vWidth - totalW) / 2;
         const cardY = 44;
@@ -3637,9 +3653,9 @@ class MedellinGame {
     ctx.fillText("[ ← / → / D-PAD ] ELEGIR   •   [ GOLPE / ACCIÓN / CLICK ] CONFIRMAR", this.vWidth / 2, 34);
 
     // 3. Tarjetas del Roster de Luchadores
-    const cardW = 96;
+    const cardW = 92;
     const cardH = 126;
-    const gap = 14;
+    const gap = 12;
     const totalW = this.roster.length * cardW + (this.roster.length - 1) * gap;
     const startX = (this.vWidth - totalW) / 2;
     const cardY = 44;
