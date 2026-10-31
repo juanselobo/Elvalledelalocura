@@ -3551,6 +3551,17 @@ class MedellinGame {
       }
     }
 
+    // Revivir a Juancho si la vida llega a cero en la canalización
+    if (p.hp <= 0 && p.action !== 'hurt') {
+      p.hp = 100;
+      p.slopeX = 380;
+      p.invulnerableTimer = 2.0;
+      this.boss.screenShake = 0.5;
+      const respawnPos = this.canalToWorldCoords(p.slopeX, 30 + (p.laneY || 16) - 35);
+      this.addFloatingText(respawnPos.x, respawnPos.y, "¡REVIVISTE! ¡NO DEJES QUE LA RATA TE ALCANCE! 🔥", "#e74c3c");
+      if (window.retroAudio && window.retroAudio.playHeavyHit) window.retroAudio.playHeavyHit();
+    }
+
     // 1. Temporizadores de acción e invulnerabilidad
     if (p.invulnerableTimer > 0) p.invulnerableTimer -= dt;
     if (p.actionTimer > 0) {
