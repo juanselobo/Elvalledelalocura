@@ -215,12 +215,18 @@ class SpriteManager {
       'player_downhill_slide_1': 'assets/player_downhill_slide_1.png',
       'player_downhill_slide_2': 'assets/player_downhill_slide_2.png',
       'player_downhill_slide_3': 'assets/player_downhill_slide_3.png',
-      'showcase_level3_descent_scheme': 'assets/showcase_level3_descent_scheme.png'
+      'showcase_level3_descent_scheme': 'assets/showcase_level3_descent_scheme.png',
+      'title_bg': 'assets/title_bg.png',
+      'title_logo_graffiti': 'assets/title_logo_graffiti.png',
+      'portrait_juancho': 'assets/portrait_juancho.png',
+      'portrait_lina': 'assets/portrait_lina.png',
+      'portrait_brayan': 'assets/portrait_brayan.png',
+      'portrait_gloria': 'assets/portrait_gloria.png'
     };
 
     const keys = Object.keys(assetList);
     this.totalImages = keys.length;
-    const assetVersion = 'v1.3.5';
+    const assetVersion = 'v1.4.0';
 
     keys.forEach(key => {
       const img = new Image();

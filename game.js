@@ -38,6 +38,81 @@ class MedellinGame {
     // Cámara
     this.cameraX = 0;
 
+    // Estado general del juego: 'TITLE' -> 'CHAR_SELECT' -> 'PLAYING'
+    this.gameState = 'TITLE';
+    this.titleTimer = 0;
+    this.charSelectIndex = 0;
+    this.charSelectConfirmTimer = 0;
+    this.charSelectFlash = 0;
+
+    // Roster de personajes para la pantalla de selección
+    this.roster = [
+      {
+        id: 'juancho',
+        name: 'JUANCHO',
+        epithet: 'EL VENGADOR DE LA 80',
+        alias: 'EL RAIL-WALKER',
+        style: 'Acróbata Urbano / Patinador sobre Rieles',
+        bio: 'Defensor de Belén y la Villa del Aburrá. Ágil y letal con su técnica de rieles.',
+        special: '★ Súplex Callejero & Giro 360° Rompe-Huesos',
+        speed: 4,
+        power: 4,
+        tech: 5,
+        status: '★ LISTO ★',
+        ready: true,
+        color: '#2ecc71',
+        portrait: 'portrait_juancho'
+      },
+      {
+        id: 'lina',
+        name: 'LINA',
+        epithet: 'REINA DEL PATÍN DE BELÉN',
+        alias: 'LA PATINADERA',
+        style: 'Velocista Aérea / Patines en Línea',
+        bio: 'Campeona callejera del patinódromo. Ataques aéreos y ráfagas de patadas.',
+        special: '★ Huracán de Patines & Volea Aérea',
+        speed: 5,
+        power: 3,
+        tech: 4,
+        status: '🔒 NIVEL 2',
+        ready: false,
+        color: '#9b59b6',
+        portrait: 'portrait_lina'
+      },
+      {
+        id: 'brayan',
+        name: 'EL BRAYAN',
+        alias: 'TITÁN DE MANRIQUE',
+        epithet: 'EL DEMOLEDOR DE LA LADERA',
+        style: 'Peso Pesado / Brawler Callejero',
+        bio: 'Fuerza bruta descomunal. Domina las esquinas de Manrique y La Cruz.',
+        special: '★ Cabezazo Demoledor & Gancho Sísmico',
+        speed: 3,
+        power: 5,
+        tech: 3,
+        status: '🔒 NIVEL 3',
+        ready: false,
+        color: '#e74c3c',
+        portrait: 'portrait_brayan'
+      },
+      {
+        id: 'gloria',
+        name: 'DOÑA GLORIA',
+        alias: 'LA FRITANGUERA',
+        epithet: 'LA MATRIARCA DE LA VILLA',
+        style: 'Fritanguera de Acero / Aliada',
+        bio: 'Alimenta al barrio con sus empanadas de Doña Gloria y castiga a los ladrones.',
+        special: '★ Tinto Hirviendo & Chancletazo Letal',
+        speed: 2,
+        power: 5,
+        tech: 4,
+        status: '☕ HISTORIA',
+        ready: false,
+        color: '#f39c12',
+        portrait: 'portrait_gloria'
+      }
+    ];
+
     // Sistema de Hit-Freeze (Impact Stop estilo SOR4 / Arcade Capcom)
     this.hitFreezeTimer = 0;
 
@@ -207,6 +282,54 @@ class MedellinGame {
   // ==========================================
   // CONFIGURACIÓN DE ENTRADAS Y DOBLE TOQUE
   // ==========================================
+  advanceTitleScreen() {
+    if (this.gameState !== 'TITLE') return;
+    this.gameState = 'CHAR_SELECT';
+    this.charSelectIndex = 0;
+    this.charSelectConfirmTimer = 0;
+    this.charSelectFlash = 0.5;
+    if (window.retroAudio && window.retroAudio.playCollect) {
+      window.retroAudio.playCollect();
+    }
+  }
+
+  selectPrevChar() {
+    if (this.gameState !== 'CHAR_SELECT') return;
+    this.charSelectIndex = (this.charSelectIndex + this.roster.length - 1) % this.roster.length;
+    if (window.retroAudio && window.retroAudio.playDash) {
+      window.retroAudio.playDash();
+    }
+  }
+
+  selectNextChar() {
+    if (this.gameState !== 'CHAR_SELECT') return;
+    this.charSelectIndex = (this.charSelectIndex + 1) % this.roster.length;
+    if (window.retroAudio && window.retroAudio.playDash) {
+      window.retroAudio.playDash();
+    }
+  }
+
+  confirmCharSelect() {
+    if (this.gameState !== 'CHAR_SELECT') return;
+    const char = this.roster[this.charSelectIndex];
+    if (char && char.ready) {
+      this.charSelectConfirmTimer = 0.5;
+      this.charSelectFlash = 1.0;
+      if (window.retroAudio && window.retroAudio.playFanfare) {
+        window.retroAudio.playFanfare();
+      }
+    } else {
+      if (window.retroAudio && window.retroAudio.playHit) {
+        window.retroAudio.playHit();
+      }
+    }
+  }
+
+  startGameWithCharacter(charId) {
+    this.gameState = 'PLAYING';
+    this.switchStage(1);
+  }
+
   setupInputs() {
     const handleDoubleTap = (key) => {
       const now = performance.now();
@@ -217,9 +340,47 @@ class MedellinGame {
       return isDouble;
     };
 
-    // Clic o toque en la pantalla avanza la cinemática o enfoca el juego
+    // Clic o toque en la pantalla
     this.canvas.addEventListener('click', (e) => {
       this.canvas.focus();
+      if (this.gameState === 'TITLE') {
+        this.advanceTitleScreen();
+        return;
+      }
+      if (this.gameState === 'CHAR_SELECT') {
+        const rect = this.canvas.getBoundingClientRect();
+        const clickX = (e.clientX - rect.left) * (this.vWidth / rect.width);
+        const clickY = (e.clientY - rect.top) * (this.vHeight / rect.height);
+
+        // Check if clicked on a character card
+        const cardW = 96, cardH = 126, gap = 14;
+        const totalW = this.roster.length * cardW + (this.roster.length - 1) * gap;
+        const startX = (this.vWidth - totalW) / 2;
+        const cardY = 44;
+
+        for (let i = 0; i < this.roster.length; i++) {
+          const cx = startX + i * (cardW + gap);
+          if (clickX >= cx && clickX <= cx + cardW && clickY >= cardY && clickY <= cardY + cardH) {
+            this.charSelectIndex = i;
+            if (window.retroAudio && window.retroAudio.playDash) window.retroAudio.playDash();
+            if (this.roster[i].ready) {
+              this.confirmCharSelect();
+            }
+            return;
+          }
+        }
+
+        // Check if clicked on bottom confirm button
+        if (clickY >= this.vHeight - 44 && clickY <= this.vHeight - 8) {
+          this.confirmCharSelect();
+          return;
+        }
+
+        // Anywhere else confirms if ready
+        this.confirmCharSelect();
+        return;
+      }
+
       if (this.ratCutscene && this.ratCutscene.active) {
         this.advanceRatCutscene();
       }
@@ -236,6 +397,30 @@ class MedellinGame {
     window.addEventListener('keydown', (e) => {
       if (window.retroAudio && window.retroAudio.init) { try { window.retroAudio.init(); } catch (err) {} }
       const k = e.key.toLowerCase();
+
+      // Navegación en Pantalla de Título
+      if (this.gameState === 'TITLE') {
+        if (k === 'q' || k === 'j' || k === ' ' || k === 'enter' || k === 'f' || k === 'c' || k === 'e') {
+          this.advanceTitleScreen();
+          return;
+        }
+      }
+
+      // Navegación en Menú de Selección de Personaje
+      if (this.gameState === 'CHAR_SELECT') {
+        if (k === 'arrowleft' || k === 'a') {
+          this.selectPrevChar();
+          return;
+        }
+        if (k === 'arrowright' || k === 'd') {
+          this.selectNextChar();
+          return;
+        }
+        if (k === 'q' || k === 'j' || k === ' ' || k === 'enter' || k === 'f' || k === 'c' || k === 'e') {
+          this.confirmCharSelect();
+          return;
+        }
+      }
       // Si la cinemática está activa, cualquier tecla de acción avanza el panel
       if (this.ratCutscene && this.ratCutscene.active) {
         if (k === ' ' || k === 'enter' || k === 'f' || k === 'c' || k === 'q' || k === 'e') {
@@ -361,21 +546,45 @@ class MedellinGame {
       });
     };
 
-    // D-Pad Game Boy Color
-    bindBtn('btnLeft', () => { this.keys.left = true; }, () => { this.keys.left = false; this.player.isDashing = false; });
-    bindBtn('btnRight', () => { this.keys.right = true; }, () => { this.keys.right = false; this.player.isDashing = false; });
+    // D-Pad Game Boy Color con soporte para selección de personaje
+    bindBtn('btnLeft', () => {
+      if (this.gameState === 'CHAR_SELECT') { this.selectPrevChar(); return; }
+      this.keys.left = true;
+    }, () => { this.keys.left = false; this.player.isDashing = false; });
+
+    bindBtn('btnRight', () => {
+      if (this.gameState === 'CHAR_SELECT') { this.selectNextChar(); return; }
+      this.keys.right = true;
+    }, () => { this.keys.right = false; this.player.isDashing = false; });
+
     bindBtn('btnUp', () => { this.keys.up = true; }, () => { this.keys.up = false; });
     bindBtn('btnDown', () => { this.keys.down = true; }, () => { this.keys.down = false; });
 
     // Botones de acción principales Game Boy Color
-    bindBtn('btnJump', () => this.triggerJump());
-    bindBtn('btnPunch', () => this.triggerAttack());
+    bindBtn('btnJump', () => {
+      if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
+      if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
+      this.triggerJump();
+    });
+    bindBtn('btnPunch', () => {
+      if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
+      if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
+      this.triggerAttack();
+    });
     bindBtn('btnKick', () => this.triggerSpecial());
     bindBtn('btnRun', () => { this.player.isDashing = !this.player.isDashing; });
 
     // Botón de ACCIÓN / HABLAR para celular
-    bindBtn('btnInteract', () => this.interact());
-    bindBtn('btnStart', () => this.interact());
+    bindBtn('btnInteract', () => {
+      if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
+      if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
+      this.interact();
+    });
+    bindBtn('btnStart', () => {
+      if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
+      if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
+      this.interact();
+    });
     bindBtn('btnSelect', () => {
       if (window.retroAudio) {
         window.retroAudio.init();
@@ -1157,6 +1366,25 @@ class MedellinGame {
   // BUCLE DE ACTUALIZACIÓN (UPDATE)
   // ==========================================
   update(dt) {
+    if (this.gameState === 'TITLE') {
+      this.titleTimer += dt;
+      return;
+    }
+
+    if (this.gameState === 'CHAR_SELECT') {
+      this.titleTimer += dt;
+      if (this.charSelectFlash > 0) {
+        this.charSelectFlash = Math.max(0, this.charSelectFlash - dt * 2.5);
+      }
+      if (this.charSelectConfirmTimer > 0) {
+        this.charSelectConfirmTimer -= dt;
+        if (this.charSelectConfirmTimer <= 0) {
+          this.startGameWithCharacter(this.roster[this.charSelectIndex].id);
+        }
+      }
+      return;
+    }
+
     // Si la cinemática de la rata mutante está activa, actualizar y congelar juego
     if (this.ratCutscene && this.ratCutscene.active) {
       this.ratCutscene.stepTimer += dt;
@@ -2424,6 +2652,16 @@ class MedellinGame {
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, this.vWidth, this.vHeight);
 
+    if (this.gameState === 'TITLE') {
+      this.drawTitleScreen(ctx);
+      return;
+    }
+
+    if (this.gameState === 'CHAR_SELECT') {
+      this.drawCharSelectScreen(ctx);
+      return;
+    }
+
     // 1. Fondos con Paralaje
     const isStage2 = this.currentStage === 2;
     const isStage3 = this.currentStage === 3;
@@ -3299,6 +3537,266 @@ class MedellinGame {
     } else if (this.ratCutscene.step > 5) {
       this.ratCutscene.active = false;
       this.switchStage(3);
+    }
+  }
+
+  drawTitleScreen(ctx) {
+    const time = Date.now();
+
+    // 1. Fondo de Medellín al atardecer (con el Edificio Coltejer reconocible)
+    const bg = window.spriteManager.getImage('title_bg');
+    if (bg && bg.complete) {
+      ctx.drawImage(bg, 0, 0, this.vWidth, this.vHeight);
+    } else {
+      ctx.fillStyle = '#1a0c2e';
+      ctx.fillRect(0, 0, this.vWidth, this.vHeight);
+    }
+
+    // 2. Luces nocturnas titilantes sobre el valle
+    ctx.fillStyle = 'rgba(255, 230, 150, 0.7)';
+    for (let i = 0; i < 18; i++) {
+      const lx = 140 + (i * 26) % 360;
+      const ly = 195 + (i * 17) % 65;
+      const tw = Math.sin(time / 200 + i) * 0.5 + 0.5;
+      if (tw > 0.4) {
+        ctx.fillRect(lx, ly, 1.5, 1.5);
+      }
+    }
+
+    // 3. Título en Grafiti Colorido: "LA CIUDAD DE LA ETERNA PELEADERA"
+    const logo = window.spriteManager.getImage('title_logo_graffiti');
+    const bobY = Math.sin(time / 550) * 3;
+    const lw = 315;
+    const lh = logo && logo.complete ? Math.floor(lw * (logo.naturalHeight / logo.naturalWidth)) : 194;
+    const lx = Math.floor((this.vWidth - lw) / 2);
+    const ly = 16 + bobY;
+
+    if (logo && logo.complete) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(8, 4, 18, 0.95)';
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 6;
+      ctx.drawImage(logo, lx, ly, lw, lh);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = '#f1c40f';
+      ctx.font = '900 18px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText("LA CIUDAD DE LA ETERNA PELEADERA", this.vWidth / 2, 70);
+    }
+
+    // 4. Subtítulo Arcade Edición Medellín
+    ctx.fillStyle = '#f1c40f';
+    ctx.font = '900 8px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText("★ ARCADE BEAT 'EM UP • EDICIÓN MEDELLÍN ★", this.vWidth / 2, ly + lh + 18);
+
+    // 5. Botón pulsante: "Haz clic en Acción o la tecla de golpe para comenzar"
+    const pulse = Math.sin(time / 140) * 0.35 + 0.65;
+    const pBoxW = 460;
+    const pBoxH = 26;
+    const pBoxX = Math.floor((this.vWidth - pBoxW) / 2);
+    const pBoxY = this.vHeight - 54;
+
+    ctx.fillStyle = 'rgba(12, 8, 26, 0.92)';
+    ctx.fillRect(pBoxX, pBoxY, pBoxW, pBoxH);
+    ctx.strokeStyle = `rgba(241, 196, 15, ${pulse})`;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(pBoxX, pBoxY, pBoxW, pBoxH);
+
+    ctx.fillStyle = `rgba(255, 255, 255, ${pulse})`;
+    ctx.font = 'bold 8.5px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText("HAZ CLIC EN ACCIÓN O LA TECLA DE GOLPE PARA COMENZAR", this.vWidth / 2, pBoxY + 16);
+
+    // 6. Leyenda de controles
+    ctx.fillStyle = 'rgba(240, 240, 240, 0.8)';
+    ctx.font = '7px monospace';
+    ctx.fillText("[ Q / J ] GOLPE   •   [ F / ENTER / ESPACIO ] ACCIÓN   •   [ CLICK / TOUCH ] COMENZAR", this.vWidth / 2, this.vHeight - 12);
+  }
+
+  drawCharSelectScreen(ctx) {
+    const time = Date.now();
+
+    // 1. Fondo atardecer Medellín con filtro oscuro arcade
+    const bg = window.spriteManager.getImage('title_bg');
+    if (bg && bg.complete) {
+      ctx.drawImage(bg, 0, 0, this.vWidth, this.vHeight);
+    }
+    ctx.fillStyle = 'rgba(10, 8, 22, 0.88)';
+    ctx.fillRect(0, 0, this.vWidth, this.vHeight);
+
+    // 2. Encabezado Arcade
+    ctx.fillStyle = '#f1c40f';
+    ctx.font = '900 12px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText("★ SELECCIONA TU LUCHADOR ★", this.vWidth / 2, 22);
+
+    ctx.fillStyle = '#bdc3c7';
+    ctx.font = '7px monospace';
+    ctx.fillText("[ ← / → / D-PAD ] ELEGIR   •   [ GOLPE / ACCIÓN / CLICK ] CONFIRMAR", this.vWidth / 2, 34);
+
+    // 3. Tarjetas del Roster de Luchadores
+    const cardW = 96;
+    const cardH = 126;
+    const gap = 14;
+    const totalW = this.roster.length * cardW + (this.roster.length - 1) * gap;
+    const startX = (this.vWidth - totalW) / 2;
+    const cardY = 44;
+
+    this.roster.forEach((c, i) => {
+      const cx = startX + i * (cardW + gap);
+      const isSel = (i === this.charSelectIndex);
+
+      ctx.fillStyle = isSel ? 'rgba(25, 20, 50, 0.95)' : 'rgba(15, 12, 30, 0.85)';
+      ctx.fillRect(cx, cardY, cardW, cardH);
+
+      if (isSel) {
+        const pulse = Math.sin(time / 120) * 0.3 + 0.7;
+        ctx.strokeStyle = `rgba(241, 196, 15, ${pulse})`;
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(cx - 2, cardY - 2, cardW + 4, cardH + 4);
+      } else {
+        ctx.strokeStyle = c.ready ? 'rgba(46, 204, 113, 0.4)' : 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cx, cardY, cardW, cardH);
+      }
+
+      // Foto de perfil / Mugshot
+      const pImg = window.spriteManager.getImage(c.portrait);
+      if (pImg && pImg.complete) {
+        ctx.drawImage(pImg, cx + 8, cardY + 8, cardW - 16, cardW - 16);
+        if (!c.ready) {
+          ctx.fillStyle = 'rgba(8, 6, 18, 0.55)';
+          ctx.fillRect(cx + 8, cardY + 8, cardW - 16, cardW - 16);
+        }
+      }
+
+      // Nombre
+      ctx.fillStyle = isSel ? '#f1c40f' : '#ffffff';
+      ctx.font = '900 8.5px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(c.name, cx + cardW / 2, cardY + 102);
+
+      // Etiqueta de Estado
+      ctx.fillStyle = c.color;
+      ctx.font = 'bold 7px monospace';
+      ctx.fillText(c.status, cx + cardW / 2, cardY + 116);
+    });
+
+    // 4. Panel de Detalles del Personaje Seleccionado
+    const selChar = this.roster[this.charSelectIndex];
+    const panX = 40;
+    const panY = 180;
+    const panW = 560;
+    const panH = 135;
+
+    ctx.fillStyle = 'rgba(14, 10, 28, 0.94)';
+    ctx.fillRect(panX, panY, panW, panH);
+    ctx.strokeStyle = selChar.ready ? '#2ecc71' : 'rgba(241, 196, 15, 0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(panX, panY, panW, panH);
+
+    // Biografía & Estilo
+    ctx.fillStyle = selChar.color;
+    ctx.font = '900 11px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${selChar.name}: ${selChar.epithet}`, panX + 16, panY + 22);
+
+    ctx.fillStyle = '#f1c40f';
+    ctx.font = 'bold 7.5px monospace';
+    ctx.fillText(`ESTILO: ${selChar.style}`, panX + 16, panY + 38);
+
+    ctx.fillStyle = '#ecf0f1';
+    ctx.font = '7.5px monospace';
+    ctx.fillText(selChar.bio, panX + 16, panY + 54);
+    ctx.fillText(`MOVIMIENTO ESPECIAL: ${selChar.special}`, panX + 16, panY + 68);
+
+    // Barras de Estadísticas
+    const stats = [
+      { name: 'VELOCIDAD', val: selChar.speed, max: 5 },
+      { name: 'PODER',     val: selChar.power, max: 5 },
+      { name: 'TÉCNICA',   val: selChar.tech, max: 5 }
+    ];
+    stats.forEach((st, idx) => {
+      const sy = panY + 88 + idx * 14;
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 7px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(st.name, panX + 16, sy);
+
+      const bx = panX + 85;
+      const bw = 100;
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.fillRect(bx, sy - 7, bw, 8);
+      ctx.fillStyle = selChar.color;
+      ctx.fillRect(bx, sy - 7, (st.val / st.max) * bw, 8);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(bx, sy - 7, bw, 8);
+    });
+
+    // Vista previa animada del sprite (Juancho)
+    const sprX = panX + 440;
+    const sprY = panY + 115;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.beginPath();
+    ctx.ellipse(sprX, sprY - 4, 30, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (selChar.id === 'juancho') {
+      const idleFrames = ['player_idle1', 'player_idle2', 'player_idle3', 'player_idle2'];
+      const fIdx = Math.floor(time / 220) % idleFrames.length;
+      window.spriteManager.drawSprite(ctx, idleFrames[fIdx], sprX, sprY, true, 1.0, 0, 1.6, 1.6);
+    } else {
+      const pImg = window.spriteManager.getImage(selChar.portrait);
+      if (pImg && pImg.complete) {
+        ctx.save();
+        ctx.globalAlpha = 0.4;
+        ctx.drawImage(pImg, sprX - 35, sprY - 80, 70, 70);
+        ctx.restore();
+      }
+      ctx.fillStyle = '#e74c3c';
+      ctx.font = 'bold 8px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText("🔒 BLOQUEADO", sprX, sprY - 4);
+    }
+
+    // 5. Botón de Confirmación en la parte inferior
+    const btnW = 460;
+    const btnH = 24;
+    const btnX = (this.vWidth - btnW) / 2;
+    const btnY = this.vHeight - 34;
+
+    if (selChar.ready) {
+      const pulse = Math.sin(time / 140) * 0.25 + 0.75;
+      ctx.fillStyle = `rgba(46, 204, 113, ${pulse})`;
+      ctx.fillRect(btnX, btnY, btnW, btnH);
+      ctx.strokeStyle = '#f1c40f';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(btnX, btnY, btnW, btnH);
+
+      ctx.fillStyle = '#0a0a14';
+      ctx.font = '900 9px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('➔ [ ENTER / GOLPE / ACCIÓN ] INICIAR MISIÓN: LA VILLA DEL ABURRÁ', this.vWidth / 2, btnY + 15);
+    } else {
+      ctx.fillStyle = 'rgba(30, 20, 40, 0.9)';
+      ctx.fillRect(btnX, btnY, btnW, btnH);
+      ctx.strokeStyle = 'rgba(231, 76, 60, 0.7)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(btnX, btnY, btnW, btnH);
+
+      ctx.fillStyle = '#e74c3c';
+      ctx.font = 'bold 8px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('🔒 LUCHADOR BLOQUEADO • ELIGE A JUANCHO PARA COMENZAR', this.vWidth / 2, btnY + 15);
+    }
+
+    // Flash de selección al confirmar
+    if (this.charSelectFlash > 0) {
+      ctx.fillStyle = `rgba(255, 240, 180, ${this.charSelectFlash * 0.85})`;
+      ctx.fillRect(0, 0, this.vWidth, this.vHeight);
     }
   }
 
