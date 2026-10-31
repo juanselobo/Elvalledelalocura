@@ -1181,6 +1181,11 @@ class MedellinGame {
         if (this.player.x >= 2415) {
           this.player.x = 2415;
           if (this.player.vx > 0) this.player.vx = 0;
+          if (!this.lastChasmAlert || Date.now() - this.lastChasmAlert > 2200) {
+            this.lastChasmAlert = Date.now();
+            this.addFloatingText(2410, this.floorZ - 120, "¡CANALIZACIÓN BLOQUEADA! DERROTA A LA CONGREGACIÓN 🔒", "#e74c3c");
+            if (window.retroAudio && window.retroAudio.playHit) window.retroAudio.playHit();
+          }
         }
       }
     }
@@ -1419,7 +1424,9 @@ class MedellinGame {
       }
     }
 
-    p.x = Math.max(30, Math.min(this.worldWidth - 50, p.x));
+    // Límites del escenario en X (desembarque en x=85, arena boss en x=1480)
+    const minPlayerX = (this.currentStage === 2 && this.boss.active && !this.boss.defeated) ? 1480 : (this.currentStage === 2 ? 85 : 30);
+    p.x = Math.max(minPlayerX, Math.min(this.worldWidth - 50, p.x));
 
     p.animTimer += dt;
     const animRate = (p.action === 'run') ? 0.07 : 0.12;
@@ -1458,8 +1465,8 @@ class MedellinGame {
       });
     }
 
-    // Límite de Doña Gloria
-    if (!this.quest.talkedGloria && p.x > 460) {
+    // Límite de Doña Gloria (exclusivo de Nivel 1)
+    if (this.currentStage === 1 && !this.quest.talkedGloria && p.x > 460) {
       p.x = 460;
       p.vx = 0;
       if (!this.lastGloriaAlert || Date.now() - this.lastGloriaAlert > 2200) {
@@ -1488,6 +1495,15 @@ class MedellinGame {
       if (e.invulnerableTimer > 0) e.invulnerableTimer -= dt;
       const distX = Math.abs(p.x - e.x);
       const distZ = Math.abs(p.z - e.z);
+
+      // Animación fluida de pasos y carrera para todos los enemigos
+      if (e.state === 'patrol' || e.state === 'charge') {
+        e.animTimer = (e.animTimer || 0) + dt;
+        if (e.animTimer >= 0.13) {
+          e.animTimer = 0;
+          e.frame = ((e.frame || 0) + 1) % 12;
+        }
+      }
 
       // Físicas de derribo en el aire (Knockdown / Lanzamiento)
       if (e.state === 'ko') {
@@ -1989,7 +2005,8 @@ class MedellinGame {
     // Cámara con seguimiento suave
     const targetCamX = p.x - this.vWidth / 2 + 30;
     this.cameraX += (targetCamX - this.cameraX) * 0.12;
-    this.cameraX = Math.max(0, Math.min(this.worldWidth - this.vWidth, this.cameraX));
+    const minCamX = (this.currentStage === 2 && this.boss.active && !this.boss.defeated) ? 1450 : 0;
+    this.cameraX = Math.max(minCamX, Math.min(this.worldWidth - this.vWidth, this.cameraX));
 
     this.pollGamepads();
   }
@@ -2137,12 +2154,12 @@ class MedellinGame {
       this.addFloatingText(e.x, e.z - 130, "¡HERMANOS, VENGAN EN ORACIÓN!", "#f1c40f");
       if (window.retroAudio.playDivineChime) window.retroAudio.playDivineChime();
       this.boss.phaseTransitionTimer = 1.6;
-      this.spawnCollectible('item_sacol', e.x, this.floorZ - 8, 'sacol');
+      this.spawnCollectible('item_sacol', e.x, e.z, 'sacol');
     } else if (this.boss.phase === 2) {
       e.state = 'ko';
       e.stateTimer = 2.4;
-      this.spawnCollectible('item_sacol', e.x - 30, this.floorZ - 8, 'sacol');
-      this.spawnCollectible('delivery_box', e.x + 30, this.floorZ - 8, 'box');
+      this.spawnCollectible('item_sacol', e.x - 30, e.z, 'sacol');
+      this.spawnCollectible('delivery_box', e.x + 30, e.z, 'box');
       this.addFloatingText(2050, this.floorZ - 140, "¡POR EL PODER DE LA CONGREGACIÓN... FUSIÓN CELESTIAL!", "#f1c40f");
       if (window.retroAudio.playDivineChime) window.retroAudio.playDivineChime();
       this.boss.screenShake = 1.3;
@@ -2153,6 +2170,7 @@ class MedellinGame {
   handleTitanDefeat(e) {
     this.boss.phase = 4;
     this.boss.defeated = true;
+    if (this.cutscene) this.cutscene.active = false;
     e.state = 'ko';
     e.stateTimer = 6.0;
     this.boss.screenShake = 1.0;
@@ -2169,7 +2187,7 @@ class MedellinGame {
       { key: 'delivery_box', type: 'box', off: 60 }
     ];
     rewards.forEach(r => {
-      this.spawnCollectible(r.key, e.x + r.off, this.floorZ - 8, r.type);
+      this.spawnCollectible(r.key, e.x + r.off, e.z, r.type);
     });
 
     const tumblingX = [e.x - 70, e.x - 25, e.x + 25, e.x + 70];
@@ -2954,12 +2972,14 @@ class MedellinGame {
             }
           } else {
             eSprite = 'testigo_trio_march';
+            offsetY = ((e.frame || 0) % 2 === 0 ? -1 : 1);
           }
         } else {
           if (e.state === 'stand') {
             eSprite = 'testigo_stand';
           } else if (e.state === 'patrol') {
-            eSprite = 'testigo_walk_1';
+            const testigoWalk = ['testigo_walk_1', 'testigo_walk_2', 'testigo_walk_3', 'testigo_walk_4'];
+            eSprite = testigoWalk[(e.frame || 0) % 4];
           } else if (e.state === 'throw') {
             if (e.stateTimer > 0.22) {
               eSprite = 'testigo_bible_raise';
@@ -3001,7 +3021,7 @@ class MedellinGame {
         } else if (e.state === 'slam') {
           eSprite = 'titan_slam';
         } else if (e.state === 'rain') {
-          eSprite = 'titan_slam';
+          eSprite = 'titan_rain';
           ctx.fillStyle = 'rgba(255, 240, 180, 0.28)';
           ctx.fillRect(item.x - 45, 0, 90, this.floorZ);
         } else if (e.state === 'hurt') {
@@ -4002,7 +4022,7 @@ class MedellinGame {
 
     ctx.fillStyle = '#f1c40f';
     ctx.font = 'bold 8.5px monospace';
-    const zoneLabel = this.currentStage === 1 ? "MISIÓN: VILLA DEL ABURRÁ" : "MISIÓN: CAMINO AL METROCABLE";
+    const zoneLabel = this.currentStage === 1 ? "MISIÓN: VILLA DEL ABURRÁ" : (this.currentStage === 2 ? "MISIÓN: MIRADOR DE LA LADERA" : "MISIÓN: DESCENSO POR LA CANALIZACIÓN");
     ctx.fillText(zoneLabel, mBoxX + 10, 20);
 
     ctx.fillStyle = '#ffffff';
@@ -4010,7 +4030,7 @@ class MedellinGame {
     let statusText = "• Habla con Doña Gloria [F / Botón ACCIÓN]";
     if (this.currentStage === 2) {
       if (this.boss.defeated) {
-        statusText = "★ ¡VICTORIA! ¡Metrocable liberado!";
+        statusText = "★ ¡VICTORIA! ¡Salta al vacío del canal! ⬇";
       } else if (this.boss.phase === 3) {
         statusText = "★ ¡Fase 3: Destruye al Titán!";
       } else if (this.boss.phase === 2) {
