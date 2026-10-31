@@ -2,209 +2,198 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Aventura en Medellín: Rail-Walker & Gamines - HD Arcade</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Aventura en Medellín: La Villa del Aburrá - Game Boy Color Edition</title>
+  <link rel="stylesheet" href="style.css?v=1793407000">
 </head>
 <body>
 
-  <div class="arcade-container">
-    <div class="arcade-header">
-      <div class="arcade-title">★ AVENTURA EN MEDELLÍN: LA VILLA DEL ABURRÁ ★</div>
-      <div class="arcade-subtitle">PARALAJE 3 CAPAS (CIUDAD CERCANA, LEJANA, LEJANÍSIMA) & SPRITES NATIVOS</div>
+  <!-- Barra superior retro: Selector de niveles y audio rápido (sin botones de spawn) -->
+  <div class="gbc-top-bar">
+    <button class="gbc-top-btn" id="btnToggleMusic" title="Activar/Desactivar Música">🎵 MÚSICA: OFF</button>
+    <div class="gbc-stage-group">
+      <button class="gbc-top-btn gbc-stage-btn active" id="btnStage1">NIVEL 1</button>
+      <button class="gbc-top-btn gbc-stage-btn" id="btnStage2">NIVEL 2</button>
+      <button class="gbc-top-btn gbc-stage-btn" id="btnStage3">NIVEL 3</button>
     </div>
+    <button class="gbc-top-btn" id="btnFullscreen" title="Pantalla Completa">⛶ PANTALLA</button>
+  </div>
 
-    <!-- Pantalla del juego con renderizado nítido a 640x360 (16:9) -->
-    <div class="screen-wrapper" id="screenWrapper">
-      <canvas id="gameCanvas" tabindex="0" autofocus></canvas>
-    </div>
-
-    <!-- Barra de acciones rápidas -->
-    <div class="controls-bar">
-      <button class="btn-retro" id="btnToggleMusic">🎵 Música: OFF</button>
-      <button class="btn-retro" id="btnFullscreen">⛶ Pantalla Completa</button>
-      <button class="btn-retro" id="btnSpawnGamin">🍞 Gamín Éxito</button>
-      <button class="btn-retro" id="btnSpawnRappi">🛵 Rappi-Gamín</button>
-      <button class="btn-retro" id="btnSpawnCritter">🐀 Rata De Todito</button>
-      <button class="btn-retro" id="btnPlayCutscene" style="border-color: #f1c40f; color: #f1c40f; font-weight: bold;">🎬 Cómic Rata [4]</button>
-      <button class="btn-retro" id="btnStage1">1️⃣ Nivel 1</button>
-      <button class="btn-retro" id="btnStage2">2️⃣ Nivel 2</button>
-      <button class="btn-retro" id="btnStage3" style="border-color: #e74c3c; color: #e74c3c; font-weight: bold;">3️⃣ Esquema Nivel 3</button>
-    </div>
-
-    <!-- Controles táctiles virtuales para celular y tablets -->
-    <div class="touch-controls" id="touchControls">
-      <div class="touch-dpad-grid">
-        <button class="touch-btn btn-dpad-up" id="btnUp">▲<span>ARR</span></button>
-        <div class="touch-dpad-row">
-          <button class="touch-btn" id="btnLeft">◄<span>IZQ</span></button>
-          <button class="touch-btn" id="btnDown">▼<span>ABA</span></button>
-          <button class="touch-btn" id="btnRight">►<span>DER</span></button>
+  <!-- Carcasa estilo Nintendo Game Boy Color (Atomic Purple / Retro Arcade) -->
+  <div class="gbc-console" id="gbcConsole">
+    
+    <!-- Bisel oscuro de la pantalla (Screen Bezel) -->
+    <div class="gbc-screen-bezel">
+      <!-- Indicador LED de encendido -->
+      <div class="gbc-bezel-top">
+        <div class="gbc-power-indicator">
+          <span class="power-led"></span>
+          <span class="power-text">POWER</span>
+        </div>
+        <div class="gbc-stripes">
+          <span></span><span></span><span></span>
         </div>
       </div>
-      <div class="touch-actions">
-        <button class="touch-btn btn-jump-style" id="btnJump">⬆<span>SALTO</span></button>
-        <button class="touch-btn" id="btnRun">⚡<span>RUN</span></button>
-        <button class="touch-btn btn-punch-style" id="btnPunch">Q<span>GOLPE</span></button>
-        <button class="touch-btn btn-kick-style" id="btnKick">E<span>ESPECIAL</span></button>
+
+      <!-- Pantalla activa del juego (Canvas 16:9) -->
+      <div class="screen-wrapper" id="screenWrapper">
+        <canvas id="gameCanvas" tabindex="0" autofocus></canvas>
+      </div>
+
+      <!-- Logotipo emblemático GAME BOY COLOR -->
+      <div class="gbc-logo-bar">
+        <span class="gb-text">GAME BOY</span>
+        <span class="gb-color">
+          <span class="c-red">C</span><span class="c-yellow">O</span><span class="c-green">L</span><span class="c-blue">O</span><span class="c-violet">R</span>
+        </span>
       </div>
     </div>
 
-    <!-- Leyenda de controles de teclado para PC (Motor Streets of Rage) -->
+    <!-- Panel de controles táctiles ergonómicos para celular -->
+    <div class="gbc-controls-deck" id="touchControls">
+      
+      <!-- LADO IZQUIERDO: Cruceta D-Pad clásica Game Boy -->
+      <div class="gbc-dpad-section">
+        <div class="gbc-dpad">
+          <button class="gbc-dpad-btn dpad-up" id="btnUp" aria-label="Arriba">▲</button>
+          <button class="gbc-dpad-btn dpad-left" id="btnLeft" aria-label="Izquierda">◀</button>
+          <div class="gbc-dpad-center"></div>
+          <button class="gbc-dpad-btn dpad-right" id="btnRight" aria-label="Derecha">▶</button>
+          <button class="gbc-dpad-btn dpad-down" id="btnDown" aria-label="Abajo">▼</button>
+        </div>
+      </div>
+
+      <!-- CENTRO: Botones inclinados SELECT y START -->
+      <div class="gbc-pills-section">
+        <div class="gbc-pill-container">
+          <button class="gbc-pill-btn" id="btnSelect" aria-label="Select / Música"></button>
+          <span class="gbc-pill-text">SELECT</span>
+        </div>
+        <div class="gbc-pill-container">
+          <button class="gbc-pill-btn" id="btnStart" aria-label="Start / Acción"></button>
+          <span class="gbc-pill-text">START</span>
+        </div>
+      </div>
+
+      <!-- LADO DERECHO: Botones de Acción (A, B, ACCIÓN, ESPECIAL, RUN) -->
+      <div class="gbc-action-section">
+        
+        <!-- Fila superior de apoyo: ESPECIAL y BOTÓN DE ACCIÓN / HABLAR -->
+        <div class="gbc-sub-row">
+          <button class="gbc-action-btn btn-special" id="btnKick" title="Especial 360°">
+            <span class="btn-main-label">SP</span>
+            <span class="btn-sub-label">GIRO</span>
+          </button>
+          <!-- BOTÓN DE ACCIÓN / INTERACTUAR SOLICITADO POR EL USUARIO -->
+          <button class="gbc-action-btn btn-interact" id="btnInteract" title="Acción / Hablar con Doña Gloria / Torniquete">
+            <span class="btn-main-label">F</span>
+            <span class="btn-sub-label">ACCIÓN</span>
+          </button>
+        </div>
+
+        <!-- Fila principal inclinada: B (Golpe), A (Salto) y RUN estilo Game Boy Color -->
+        <div class="gbc-main-row">
+          <button class="gbc-action-btn btn-punch" id="btnPunch" title="Golpe / Combo 4 golpes">
+            <span class="btn-main-label">B</span>
+            <span class="btn-sub-label">GOLPE</span>
+          </button>
+          <button class="gbc-action-btn btn-jump" id="btnJump" title="Salto / Doble Salto">
+            <span class="btn-main-label">A</span>
+            <span class="btn-sub-label">SALTO</span>
+          </button>
+          <button class="gbc-action-btn btn-dash" id="btnRun" title="Correr / Dash">
+            <span class="btn-main-label">⚡</span>
+            <span class="btn-sub-label">RUN</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Rejilla de altavoz Game Boy Color (Speaker Grille) -->
+      <div class="gbc-speaker-grille">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+    </div>
+
+    <!-- Leyenda de controles de teclado para PC (oculta en móviles) -->
     <div class="controls-legend">
       <div class="control-item">
-        <span class="key-badge">W / A / S / D</span> o <span class="key-badge">Flechas</span> Moverse en 8 direcciones por la calle
+        <span class="key-badge">W / A / S / D</span> o <span class="key-badge">Flechas</span> Moverse
       </div>
       <div class="control-item">
-        <span class="key-badge">Doble Toque → →</span> o <span class="key-badge">Shift</span> Correr (Dash)
+        <span class="key-badge">Espacio</span> Salto / Doble Salto
       </div>
       <div class="control-item">
-        <span class="key-badge">Doble Toque ↑ ↑ / ↓ ↓</span> Rodada evasiva vertical (Invulnerabilidad)
+        <span class="key-badge">Q / J</span> Combo 4 Golpes
       </div>
       <div class="control-item">
-        <span class="key-badge">Espacio</span> Saltar | <span class="key-badge">Q en el aire</span> Patada Voladora K.O.
+        <span class="key-badge">E / K</span> Especial 360°
       </div>
       <div class="control-item">
-        <span class="key-badge">Q / J</span> Combo 4 Golpes: Puño Directo → Recto Cruzado → Patada Media → Gancho al Mentón K.O. | <span class="key-badge">S + Q</span> Patada Baja | <span class="key-badge">W + Q</span> Patada Media
+        <span class="key-badge">F / Enter</span> <strong>Acción / Hablar</strong>
       </div>
       <div class="control-item">
-        <span class="key-badge">Q al correr</span> Ataque Blitz (Embestida con hombro)
+        <span class="key-badge">Shift</span> Correr
       </div>
       <div class="control-item">
-        <span class="key-badge">Caminar hacia enemigo</span> ¡AGARRE! (<span class="key-badge">Q</span>: Rodillazo | <span class="key-badge">E</span>: ¡SÚPLEX CALLEJERO!)
-      </div>
-      <div class="control-item">
-        <span class="key-badge">E</span> o <span class="key-badge">K</span> Especial 360° (Invulnerabilidad + Daño de área, consume Vida Verde SOR4)
-      </div>
-      <div class="control-item">
-        <span class="key-badge">F</span> Hablar con Doña Gloria / Torniquete
-      </div>
-      <div class="control-item">
-        <span class="key-badge">1 / 2</span> Cambiar Nivel | <span class="key-badge">M</span> Música Chiptune
+        <span class="key-badge">1 / 2 / 3</span> Cambiar Nivel | <span class="key-badge">M</span> Música
       </div>
     </div>
+
   </div>
 
   <!-- Scripts del juego -->
-  <script src="audio.js?v=1793388200"></script>
-  <script src="sprites.js?v=1793406000"></script>
-  <script src="game.js?v=1793406000"></script>
+  <script src="audio.js?v=1793407000"></script>
+  <script src="sprites.js?v=1793407000"></script>
+  <script src="game.js?v=1793407000"></script>
 
   <script>
-    // Conectar botones auxiliares de la interfaz
-    document.getElementById('btnToggleMusic').addEventListener('click', function() {
-      window.retroAudio.init();
-      const isPlaying = window.retroAudio.toggleBgm();
-      this.textContent = isPlaying ? "🎵 Música: ON" : "🎵 Música: OFF";
-      this.style.color = isPlaying ? "#2ecc71" : "#f1c40f";
-    });
-
-    document.getElementById('btnFullscreen').addEventListener('click', function() {
-      const el = document.getElementById('screenWrapper');
-      if (!document.fullscreenElement) {
-        if (el.requestFullscreen) el.requestFullscreen();
-        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-      } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-      }
-    });
-
-    document.getElementById('btnSpawnCritter').addEventListener('click', function() {
-      if (window.medellinGame) {
-        window.medellinGame.spawnCritter();
-      }
-    });
-
-    document.getElementById('btnSpawnGamin').addEventListener('click', function() {
-      if (window.medellinGame) {
-        const p = window.medellinGame.player;
-        window.medellinGame.enemies.push({
-          id: 'gamin',
-          name: 'GAMÍN DEL ÉXITO',
-          x: p.x + (p.facingRight ? 280 : -280),
-          z: p.z + (Math.random() * 24 - 12),
-          elevY: 0,
-          vx: 0,
-          vz: 0,
-          vy: 0,
-          width: 40,
-          height: 96,
-          facingRight: !p.facingRight,
-          state: 'charge',
-          stateTimer: 3.0,
-          frame: 0,
-          animTimer: 0,
-          hp: 100,
-          maxHp: 100,
-          patrolStartX: p.x - 200,
-          patrolEndX: p.x + 200,
-          patrolDir: p.facingRight ? -1 : 1,
-          speedX: 110,
-          speedZ: 65,
-          zFlankOffset: (Math.random() < 0.5 ? -15 : 15),
-          invulnerableTimer: 0,
-          starsAngle: 0
-        });
-        window.medellinGame.addFloatingText(p.x + (p.facingRight ? 280 : -280), p.z - 120, "¡OTRO GAMÍN!", "#e74c3c");
-      }
-    });
-
-    document.getElementById('btnSpawnRappi').addEventListener('click', function() {
-      if (window.medellinGame) {
-        const p = window.medellinGame.player;
-        window.medellinGame.enemies.push({
-          id: 'rappi',
-          name: 'RAPPI-GAMÍN',
-          x: p.x + (p.facingRight ? 320 : -320),
-          z: p.z + (Math.random() * 24 - 12),
-          elevY: 0,
-          vx: 0,
-          vz: 0,
-          vy: 0,
-          width: 40,
-          height: 96,
-          facingRight: !p.facingRight,
-          state: 'charge',
-          stateTimer: 3.0,
-          frame: 0,
-          animTimer: 0,
-          hp: 120,
-          maxHp: 120,
-          patrolStartX: p.x - 250,
-          patrolEndX: p.x + 250,
-          patrolDir: p.facingRight ? -1 : 1,
-          speedX: 120,
-          speedZ: 70,
-          zFlankOffset: (Math.random() < 0.5 ? -18 : 18),
-          invulnerableTimer: 0,
-          starsAngle: 0,
-          throwCooldown: 2.0
-        });
-        window.medellinGame.addFloatingText(p.x + (p.facingRight ? 320 : -320), p.z - 125, "¡LLEGÓ EL RAPPI!", "#e67e22");
-      }
-    });
-
-    document.getElementById('btnPlayCutscene').addEventListener('click', function() {
-      if (window.medellinGame) {
-        window.medellinGame.startRatCutscene();
-      }
-    });
+    // Selector de niveles interactivo con estado activo
+    function updateActiveStageButton(stageNum) {
+      document.querySelectorAll('.gbc-stage-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById('btnStage' + stageNum);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+    window.updateActiveStageButton = updateActiveStageButton;
 
     document.getElementById('btnStage1').addEventListener('click', function() {
       if (window.medellinGame) {
         window.medellinGame.switchStage(1);
+        updateActiveStageButton(1);
       }
     });
 
     document.getElementById('btnStage2').addEventListener('click', function() {
       if (window.medellinGame) {
         window.medellinGame.switchStage(2);
+        updateActiveStageButton(2);
       }
     });
 
     document.getElementById('btnStage3').addEventListener('click', function() {
       if (window.medellinGame) {
         window.medellinGame.switchStage(3);
+        updateActiveStageButton(3);
+      }
+    });
+
+    // Control de música
+    document.getElementById('btnToggleMusic').addEventListener('click', function() {
+      window.retroAudio.init();
+      const isPlaying = window.retroAudio.toggleBgm();
+      this.textContent = isPlaying ? "🎵 MÚSICA: ON" : "🎵 MÚSICA: OFF";
+      this.style.color = isPlaying ? "#2ecc71" : "#f1c40f";
+    });
+
+    // Pantalla completa
+    document.getElementById('btnFullscreen').addEventListener('click', function() {
+      const el = document.getElementById('gbcConsole') || document.getElementById('screenWrapper');
+      if (!document.fullscreenElement) {
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
       }
     });
 

@@ -125,7 +125,7 @@ class MedellinGame {
       x: 260,
       z: this.floorZ - 12,
       talking: false,
-      dialogue: "¡Juancho mijo! Hable conmigo [Tecla F] antes de meterse a los rieles..."
+      dialogue: "¡Juancho mijo! Hable conmigo [F / Botón ACCIÓN] antes de meterse a los rieles..."
     };
 
     // ==========================================
@@ -328,25 +328,65 @@ class MedellinGame {
     const bindBtn = (id, onDown, onUp) => {
       const el = document.getElementById(id);
       if (!el) return;
-      el.addEventListener('touchstart', (e) => {
-        e.preventDefault();
+      let isPressed = false;
+
+      const handleDown = (e) => {
+        if (e && e.cancelable && e.type.startsWith('touch')) e.preventDefault();
+        if (isPressed) return;
+        isPressed = true;
+        el.classList.add('pressed');
         if (window.retroAudio && window.retroAudio.init) { try { window.retroAudio.init(); } catch (err) {} }
         onDown();
-      }, { passive: false });
-      el.addEventListener('touchend', (e) => {
-        e.preventDefault();
+      };
+
+      const handleUp = (e) => {
+        if (e && e.cancelable && e.type.startsWith('touch')) e.preventDefault();
+        if (!isPressed) return;
+        isPressed = false;
+        el.classList.remove('pressed');
         if (onUp) onUp();
-      }, { passive: false });
+      };
+
+      el.addEventListener('touchstart', handleDown, { passive: false });
+      el.addEventListener('touchend', handleUp, { passive: false });
+      el.addEventListener('touchcancel', handleUp, { passive: false });
+      el.addEventListener('mousedown', handleDown);
+      el.addEventListener('mouseup', handleUp);
+      el.addEventListener('mouseleave', handleUp);
+      el.addEventListener('click', (e) => {
+        if (!isPressed) {
+          handleDown(e);
+          setTimeout(() => handleUp(e), 80);
+        }
+      });
     };
 
+    // D-Pad Game Boy Color
     bindBtn('btnLeft', () => { this.keys.left = true; }, () => { this.keys.left = false; this.player.isDashing = false; });
     bindBtn('btnRight', () => { this.keys.right = true; }, () => { this.keys.right = false; this.player.isDashing = false; });
     bindBtn('btnUp', () => { this.keys.up = true; }, () => { this.keys.up = false; });
     bindBtn('btnDown', () => { this.keys.down = true; }, () => { this.keys.down = false; });
+
+    // Botones de acción principales Game Boy Color
     bindBtn('btnJump', () => this.triggerJump());
-    bindBtn('btnRun', () => { this.player.isDashing = !this.player.isDashing; });
     bindBtn('btnPunch', () => this.triggerAttack());
     bindBtn('btnKick', () => this.triggerSpecial());
+    bindBtn('btnRun', () => { this.player.isDashing = !this.player.isDashing; });
+
+    // Botón de ACCIÓN / HABLAR para celular
+    bindBtn('btnInteract', () => this.interact());
+    bindBtn('btnStart', () => this.interact());
+    bindBtn('btnSelect', () => {
+      if (window.retroAudio) {
+        window.retroAudio.init();
+        const isPlaying = window.retroAudio.toggleBgm();
+        const musicBtn = document.getElementById('btnToggleMusic');
+        if (musicBtn) {
+          musicBtn.textContent = isPlaying ? "🎵 MÚSICA: ON" : "🎵 MÚSICA: OFF";
+          musicBtn.style.color = isPlaying ? "#2ecc71" : "#f1c40f";
+        }
+      }
+    });
   }
 
   // ==========================================
@@ -781,6 +821,7 @@ class MedellinGame {
   switchStage(stageNum) {
     this.currentStage = stageNum;
     this.stageTransitionTimer = 1.0;
+    if (window.updateActiveStageButton) window.updateActiveStageButton(stageNum);
     this.player.x = stageNum === 2 ? 140 : (stageNum === 3 ? 200 : 80);
     this.player.z = this.floorZ;
     this.player.elevY = 0;
@@ -1398,7 +1439,7 @@ class MedellinGame {
       p.x = 460;
       p.vx = 0;
       if (Math.random() < 0.04) {
-        this.addFloatingText(460, p.z - 120, "¡HABLA PRIMERO CON DOÑA GLORIA! [F]", "#f1c40f");
+        this.addFloatingText(460, p.z - 120, "¡HABLA CON DOÑA GLORIA! [F / ACCIÓN]", "#f1c40f");
       }
     }
 
@@ -2972,7 +3013,7 @@ class MedellinGame {
       ctx.fillRect(x - 20, y - 110, 96, 18);
       ctx.fillStyle = '#000000';
       ctx.font = 'bold 9px monospace';
-      ctx.fillText("[F] HABLAR / GLORIA", x - 16, y - 98);
+      ctx.fillText("[F / ACCIÓN] HABLAR", x - 16, y - 98);
     }
   }
 
@@ -3924,7 +3965,7 @@ class MedellinGame {
 
     ctx.fillStyle = '#ffffff';
     ctx.font = '7.5px monospace';
-    let statusText = "• Habla con Doña Gloria [Tecla F]";
+    let statusText = "• Habla con Doña Gloria [F / Botón ACCIÓN]";
     if (this.currentStage === 2) {
       if (this.boss.defeated) {
         statusText = "★ ¡VICTORIA! ¡Metrocable liberado!";
@@ -3942,7 +3983,7 @@ class MedellinGame {
     } else if (this.quest.gaminKo && this.quest.rappiKo) {
       statusText = "• ¡Recoge el Tiquete rojo del suelo!";
     } else if (!this.quest.talkedGloria) {
-      statusText = "• Habla con Doña Gloria [Tecla F]";
+      statusText = "• Habla con Doña Gloria [F / Botón ACCIÓN]";
     } else if (!this.quest.gaminKo) {
       statusText = "• Derrota al Gamín del Éxito [Q/J]";
     } else {
