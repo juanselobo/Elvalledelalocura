@@ -4088,6 +4088,16 @@ class MedellinGame {
     this.canal.acceleration = 6.75; // Incremento progresivo (~40s para alcanzar 300 km/h)
     this.canal.ratChompAnim = 0;
     this.canal.ratBiteHit = false;
+    this.canal.rat = {
+      state: 'waiting',       // 'waiting' (0-3s sin ataque para acostumbrarse), 'entering' (0.85s dash-in con escombros), 'chasing'
+      introTimer: 3.0,        // 3 segundos de gracia inicial
+      enterDuration: 0.85,    // Entrada rápida de izquierda a derecha
+      enterTimer: 0,
+      x: -650,                // Comienza totalmente fuera de pantalla a la izquierda
+      y: -55,
+      debrisParticles: [],
+      roarPlayed: false
+    };
     this.boss.screenShake = 0;      // Asegurar pantalla 100% fija sin vibraciones residuales
     this.boss.flashTimer = 0;
     this.cameraX = 0;
@@ -4113,6 +4123,51 @@ class MedellinGame {
     this.player.facingRight = true;
   }
 
+  spawnCanalDebrisExplosion() {
+    if (!this.canal.rat) return;
+    const debrisKeys = [
+      'debris_concrete_slab',
+      'debris_concrete_chunk',
+      'debris_pipe_shard',
+      'debris_asphalt_rock',
+      'debris_sludge_splash'
+    ];
+    
+    // Generar 28 fragmentos de material volando dramáticamente en arco parabólico
+    for (let i = 0; i < 28; i++) {
+      const key = debrisKeys[i % debrisKeys.length];
+      const speed = 230 + Math.random() * 380;
+      const angle = (Math.random() * 0.65 - 0.22) * Math.PI; // Dispersión hacia la derecha y hacia arriba
+      this.canal.rat.debrisParticles.push({
+        spriteKey: key,
+        x: 130 + (Math.random() * 50 - 25),
+        y: 85 + (Math.random() * 40 - 20),
+        vx: Math.cos(angle) * speed + 90,
+        vy: -Math.abs(Math.sin(angle)) * speed - 70,
+        gravity: 580 + Math.random() * 180,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 15,
+        scale: 0.65 + Math.random() * 0.55,
+        life: 2.2 + Math.random() * 0.9,
+        bounces: 0
+      });
+    }
+
+    // Partículas adicionales de polvo y lodo
+    for (let k = 0; k < 22; k++) {
+      this.particles.push({
+        x: 140 + Math.random() * 60,
+        y: 110 + Math.random() * 50,
+        vx: 140 + Math.random() * 240,
+        vy: -150 - Math.random() * 190,
+        size: 3 + Math.random() * 4,
+        color: Math.random() < 0.4 ? '#7f8c8d' : (Math.random() < 0.5 ? '#e67e22' : '#16a085'),
+        life: 0.8 + Math.random() * 0.7,
+        maxLife: 1.5
+      });
+    }
+  }
+
   updateCanal(dt) {
     if (!this.canal.active) return;
 
@@ -4136,23 +4191,103 @@ class MedellinGame {
 
     const p = this.player;
 
-    // Mecánica de Mordisco de la Rata Colosal si Juancho se rezaga demasiado cerca de sus fauces
-    const ratCycle = (this.canal.ratChompAnim % 2.4);
-    if (ratCycle < 1.1) {
-      this.canal.ratBiteHit = false;
-    } else if (ratCycle >= 1.7 && !this.canal.ratBiteHit) {
-      // Fase de Mordisco Snap: si Juancho está en el rango de alcance de la boca
-      if (p.slopeX <= 315 && p.invulnerableTimer <= 0 && p.action !== 'hurt') {
-        this.canal.ratBiteHit = true;
-        p.hp = Math.max(0, p.hp - 25);
-        p.invulnerableTimer = 1.0;
-        p.action = 'hurt';
-        p.actionTimer = 0.45;
-        p.slopeX = Math.min(460, p.slopeX + 80); // Empuje hacia adelante para escapar del mordisco
-        this.boss.screenShake = 0.75;
-        if (window.retroAudio && window.retroAudio.playHit) window.retroAudio.playHit();
-        const bitePos = this.canalToWorldCoords(p.slopeX, 30 + (p.laneY || 16) - 35);
-        this.addFloatingText(bitePos.x, bitePos.y, "-25 HP ¡MORDISCO DE RATA COLOSAL!", "#e74c3c");
+    // Actualización de la Rata Mutante y su entrada dramática
+    if (this.canal.rat) {
+      const rat = this.canal.rat;
+
+      // Actualizar escombros y partículas de material
+      for (let i = rat.debrisParticles.length - 1; i >= 0; i--) {
+        const dp = rat.debrisParticles[i];
+        dp.x += dp.vx * dt;
+        dp.y += dp.vy * dt;
+        dp.vy += dp.gravity * dt;
+        dp.rotation += dp.rotSpeed * dt;
+        dp.life -= dt;
+
+        // Rebote elástico en el fondo de concreto del canal
+        if (dp.y >= 270 && dp.vy > 0 && dp.bounces < 2) {
+          dp.y = 270;
+          dp.vy = -dp.vy * 0.45;
+          dp.vx *= 0.72;
+          dp.bounces++;
+        }
+
+        if (dp.life <= 0 || dp.x > 800) {
+          rat.debrisParticles.splice(i, 1);
+        }
+      }
+
+      // FASE 1: 3 segundos iniciales de gracia (sin atacar) para que el jugador se acostumbre a la dinámica
+      if (rat.state === 'waiting') {
+        rat.introTimer -= dt;
+        if (rat.introTimer <= 0) {
+          rat.state = 'entering';
+          rat.enterTimer = 0;
+          this.boss.screenShake = 1.35;
+          if (window.retroAudio && window.retroAudio.playHeavyHit) window.retroAudio.playHeavyHit();
+          if (window.retroAudio && window.retroAudio.playBossSting) window.retroAudio.playBossSting(3);
+          this.spawnCanalDebrisExplosion();
+          const pCoords = this.canalToWorldCoords(p.slopeX || 350, 30);
+          this.addFloatingText(pCoords.x, pCoords.y - 20, "¡¡¡ALERTA: LA RATA GIGANTE SURGE DEL DRENAJE!!! 🐀💥", "#e74c3c");
+        }
+      }
+      // FASE 2: Aparición veloz de izquierda a derecha con estallido de escombros de material
+      else if (rat.state === 'entering') {
+        rat.enterTimer += dt;
+        const t = Math.min(1.0, rat.enterTimer / rat.enterDuration);
+        const ease = 1 - Math.pow(1 - t, 3); // Aceleración cúbica hacia adentro y desaceleración impactante
+        rat.x = -650 + ease * 390; // Rápida transición de -650 hasta -260
+
+        if (rat.enterTimer >= rat.enterDuration) {
+          rat.state = 'chasing';
+        }
+      }
+      // FASE 3: Persecución dinámica: a medida que aumenta la velocidad se acerca más y se aleja un poco; hacia el final a máxima velocidad se acerca cada vez más
+      else if (rat.state === 'chasing') {
+        const spdRatio = Math.max(0, Math.min(1.0, (this.canal.speed - initSpd) / (maxSpd - initSpd)));
+
+        // Base progresiva: a baja velocidad (-270, lejos) hasta (-115 a alta velocidad)
+        const baseOffset = -270 + (spdRatio * 155);
+
+        // Dinámica depredadora ("se acerca más y se aleja un poco"):
+        const chompCycle = (this.canal.ratChompAnim % 2.4);
+        let lungeDist = 0;
+        if (chompCycle < 1.1) {
+          // Fase rugido / acecho: retrocede ligeramente para tomar impulso (-16px)
+          lungeDist = Math.sin((chompCycle / 1.1) * Math.PI) * 16 - 16;
+        } else if (chompCycle < 1.7) {
+          // Fase carrera rabiosa: se abalanza ganando terreno (+48px)
+          lungeDist = ((chompCycle - 1.1) / 0.6) * 48;
+        } else {
+          // Fase mordisco voraz: embestida máxima hacia las ruedas/pies
+          const snapT = (chompCycle - 1.7) / 0.7;
+          lungeDist = 48 + (1 - snapT) * 36;
+        }
+
+        // Hacia el final, cuando ya está alcanzando la velocidad máxima (240 a 300 km/h), se acerca cada vez más y más
+        const climaxRush = Math.pow(spdRatio, 2.5) * 58;
+
+        const targetRatX = baseOffset + lungeDist + climaxRush;
+        rat.x += (targetRatX - rat.x) * 0.16; // Suavizado orgánico arcade
+
+        // Mecánica de mordisco snap sincronizada con la posición real de las fauces
+        if (ratCycle >= 1.7 && !this.canal.ratBiteHit) {
+          const ratSnoutX = rat.x + 405; // Extremo frontal de las fauces
+          if (p.slopeX <= ratSnoutX + 22 && p.invulnerableTimer <= 0 && p.action !== 'hurt') {
+            this.canal.ratBiteHit = true;
+            p.hp = Math.max(0, p.hp - 25);
+            p.invulnerableTimer = 1.0;
+            p.action = 'hurt';
+            p.actionTimer = 0.45;
+            p.slopeX = Math.min(460, p.slopeX + 80); // Empuje hacia adelante para darle oportunidad de acelerar
+            this.boss.screenShake = 0.75;
+            if (window.retroAudio && window.retroAudio.playHit) window.retroAudio.playHit();
+            const bitePos = this.canalToWorldCoords(p.slopeX, 30 + (p.laneY || 16) - 35);
+            this.addFloatingText(bitePos.x, bitePos.y, "-25 HP ¡MORDISCO DE RATA COLOSAL!", "#e74c3c");
+          }
+        } else if (ratCycle < 1.1) {
+          this.canal.ratBiteHit = false;
+        }
       }
     }
 
@@ -4464,40 +4599,57 @@ class MedellinGame {
 
     ctx.restore(); // Fin del plano rotado de la rampa
 
-    // 5. Rata Mutante Colosal persiguiendo dinámicamente (3 Poses Auténticas CPS-3)
-    // Ciclo de animación: Rugido -> Furia Rabiosa -> Mordisco Feroz Snap
-    const ratCycle = (this.canal.ratChompAnim % 2.4);
-    let currentRatKey = 'rata_colosal_open';
-    let lungeProgress = 0;
+    // 5. Rata Mutante Colosal y Escombros de Material
+    // Solo se dibuja si NO está en el periodo de espera de los 3s iniciales
+    if (this.canal.rat && this.canal.rat.state !== 'waiting') {
+      const rat = this.canal.rat;
+      const ratCycle = (this.canal.ratChompAnim % 2.4);
+      let currentRatKey = 'rata_colosal_open';
 
-    if (ratCycle < 1.1) {
-      // Fase 1: Rugido con fauces bien abiertas
-      currentRatKey = 'rata_colosal_open';
-      lungeProgress = Math.sin((ratCycle / 1.1) * Math.PI) * 0.35;
-    } else if (ratCycle < 1.7) {
-      // Fase 2: Rabiosa con vena palpitante de furia y espuma tóxica
-      currentRatKey = 'rata_colosal_rabid';
-      lungeProgress = 0.35 + ((ratCycle - 1.1) / 0.6) * 0.45;
-    } else {
-      // Fase 3: Mordisco violento Snap / Chomp cerrando las mandíbulas con estallido de saliva
-      currentRatKey = 'rata_colosal_snap';
-      const snapT = (ratCycle - 1.7) / 0.7;
-      lungeProgress = 0.8 + (1 - snapT) * 0.2;
+      if (ratCycle < 1.1) {
+        currentRatKey = 'rata_colosal_open';
+      } else if (ratCycle < 1.7) {
+        currentRatKey = 'rata_colosal_rabid';
+      } else {
+        currentRatKey = 'rata_colosal_snap';
+      }
+
+      const ratImg = window.spriteManager.getImage(currentRatKey) || window.spriteManager.getImage('rata_colosal_maw');
+      if (ratImg && ratImg.complete) {
+        const ratCos = Math.cos(slopeAngle);
+        const ratSin = Math.sin(slopeAngle);
+        const ratBob = Math.sin(this.canal.ratChompAnim * 3.2) * 5;
+
+        const ratDrawX = Math.round(rat.x * ratCos);
+        const ratDrawY = Math.round(rat.x * ratSin + ratBob + (rat.y || -55));
+        const ratDrawW = 460;
+        const ratDrawH = 425;
+
+        ctx.drawImage(ratImg, ratDrawX, ratDrawY, ratDrawW, ratDrawH);
+      }
     }
 
-    const ratImg = window.spriteManager.getImage(currentRatKey) || window.spriteManager.getImage('rata_colosal_maw');
-    if (ratImg && ratImg.complete) {
-      const lungeDist = lungeProgress * 26;
-      const ratCos = Math.cos(slopeAngle);
-      const ratSin = Math.sin(slopeAngle);
-      const ratBob = Math.sin(this.canal.ratChompAnim * 3.2) * 5;
+    // Dibujar escombros de material (concreto reforzado, tubería rota, asfalto y lodo) saliendo despedidos
+    if (this.canal.rat && this.canal.rat.debrisParticles && this.canal.rat.debrisParticles.length > 0) {
+      this.canal.rat.debrisParticles.forEach(dp => {
+        const dAlpha = Math.max(0, Math.min(1.0, dp.life / 0.5));
+        window.spriteManager.drawSprite(ctx, dp.spriteKey, dp.x, dp.y, true, dAlpha, dp.rotation, dp.scale, dp.scale);
+      });
+    }
 
-      const ratDrawX = Math.round(-175 + lungeDist * ratCos);
-      const ratDrawY = Math.round(-55 + lungeDist * ratSin + ratBob);
-      const ratDrawW = 460;
-      const ratDrawH = 425;
-
-      ctx.drawImage(ratImg, ratDrawX, ratDrawY, ratDrawW, ratDrawH);
+    // Banner de ayuda durante los 3 segundos iniciales de adaptación a la dinámica
+    if (this.canal.rat && this.canal.rat.state === 'waiting') {
+      ctx.save();
+      ctx.fillStyle = 'rgba(15, 12, 28, 0.88)';
+      ctx.fillRect(this.vWidth / 2 - 205, 48, 410, 24);
+      ctx.strokeStyle = '#2ecc71';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(this.vWidth / 2 - 205, 48, 410, 24);
+      ctx.fillStyle = '#f1c40f';
+      ctx.font = '900 9px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText("★ CANALIZACIÓN DEL RÍO MEDELLÍN ★ [A/D] Maniobra • [W/S] Carril • [ESPACIO] Salto", this.vWidth / 2, 63);
+      ctx.restore();
     }
 
     // 6. Ráfagas de viento y estelas de velocidad sincronizadas con la aceleración (30 a 300 KM/H)
