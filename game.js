@@ -4123,39 +4123,48 @@ class MedellinGame {
     this.player.doubleJumped = false;
     this.player.facingRight = true;
 
-    // Sistema de Señalización Vial Cuadrada en Esquina Superior (Tránsito Medellín)
+    // Sistema de Señalización Vial Cuadrada Simplificada (Soterrado Medellín)
     this.canal.highwaySigns = {
       signs: [
         {
           id: '5km',
-          triggerTime: 27.5,
-          spriteKey: 'sign_viaducto_5km',
-          title: '5 KM PARA EL VIADUCTO',
-          subtext: 'MEDELLÍN • AUTOPISTA SUR',
+          triggerTime: 25.5,
+          spriteKey: 'sign_soterrado_5km',
+          title: 'SOTERRADO A 5 KM',
+          subtext: 'AUTOPISTA SUR',
+          triggered: false
+        },
+        {
+          id: '3km',
+          triggerTime: 28.2,
+          spriteKey: 'sign_soterrado_3km',
+          title: 'SOTERRADO A 3 KM',
+          subtext: 'AUTOPISTA SUR',
           triggered: false
         },
         {
           id: '2km',
-          triggerTime: 30.3,
-          spriteKey: 'sign_viaducto_2km',
-          title: '2 KM PARA EL VIADUCTO',
-          subtext: 'SISTEMA VIAL DEL RÍO',
+          triggerTime: 30.8,
+          spriteKey: 'sign_soterrado_2km',
+          title: 'SOTERRADO A 2 KM',
+          subtext: 'AUTOPISTA SUR',
           triggered: false
         },
         {
           id: '1km',
-          triggerTime: 32.5,
-          spriteKey: 'sign_viaducto_1km',
-          title: '1 KM PARA EL VIADUCTO',
-          subtext: 'VIADUCTO METRO / ACCESO',
+          triggerTime: 33.4,
+          spriteKey: 'sign_soterrado_1km',
+          title: 'SOTERRADO A 1 KM',
+          subtext: 'AUTOPISTA SUR',
           triggered: false
         },
         {
-          id: 'entry',
-          triggerTime: 35.1,
-          spriteKey: 'sign_viaducto_entry',
-          title: 'ESTÁ A PUNTO DE ENTRAR AL VIADUCTO',
-          subtext: '⚠ ALERTA DE TRÁNSITO ⚠',
+          id: '50m',
+          triggerTime: 36.0,
+          spriteKey: 'sign_soterrado_50m',
+          title: 'SOTERRADO A 50 M',
+          subtext: '¡ENTRADA INMINENTE!',
+          isFinal: true,
           triggered: false
         }
       ],
@@ -4528,7 +4537,7 @@ class MedellinGame {
       // 2. Animación fluida de entrada, sostén estático y salida en la esquina superior
       if (hs.activeSignIndex >= 0) {
         hs.activeTimer += dt;
-        const dur = 2.7; // Duración cómoda en pantalla
+        const dur = 2.45; // Duración cómoda en pantalla
         if (hs.activeTimer < 0.2) {
           // Entrada elástica desde la derecha
           const t = hs.activeTimer / 0.2;
@@ -4784,7 +4793,7 @@ class MedellinGame {
       ctx.stroke();
     }
 
-    // 7. LETRERO VIAL CUADRADO EN ESQUINA SUPERIOR DERECHA (TRÁNSITO MEDELLÍN)
+    // 7. AVISOS DEL SOTERRADO SIMPLIFICADOS EN ESQUINA SUPERIOR DERECHA (TRÁNSITO MEDELLÍN)
     if (this.canal.highwaySigns && this.canal.highwaySigns.cornerAlpha > 0 && this.canal.highwaySigns.activeSignIndex >= 0) {
       const hs = this.canal.highwaySigns;
       const activeSign = hs.signs[hs.activeSignIndex];
@@ -4794,31 +4803,31 @@ class MedellinGame {
         ctx.save();
         ctx.globalAlpha = hs.cornerAlpha;
 
-        const signW = 124;
-        const signH = 112;
+        const signW = 112;
+        const signH = 98;
         // Posición compacta en la esquina superior derecha (no estorba la visión del juego)
-        const targetX = this.vWidth - signW - 14; // 640 - 124 - 14 = 502
+        const targetX = this.vWidth - signW - 12; // 640 - 112 - 12 = 516
         const startX = this.vWidth + 10;
         const currentX = Math.round(startX + hs.cornerSlide * (targetX - startX));
         const currentY = 10;
 
-        // Renderizado del letrero cuadrado oficial de tránsito de Medellín
+        // Renderizado del letrero cuadrado oficial simplificado del soterrado
         ctx.drawImage(signImg, currentX, currentY, signW, signH);
 
-        // Balizas intermitentes para el aviso de alerta de entrada al viaducto
-        if (hs.activeSignIndex === 3) {
-          const blink = Math.floor(Date.now() / 140) % 2 === 0;
+        // Balizas intermitentes para el aviso de alerta inminente (A 50 M)
+        if (activeSign.isFinal || hs.activeSignIndex === 4) {
+          const blink = Math.floor(Date.now() / 130) % 2 === 0;
           if (blink) {
             ctx.fillStyle = '#f39c12';
             ctx.beginPath();
-            ctx.arc(currentX + 12, currentY + 12, 4, 0, Math.PI * 2);
-            ctx.arc(currentX + signW - 16, currentY + 12, 4, 0, Math.PI * 2);
+            ctx.arc(currentX + 11, currentY + 11, 4.5, 0, Math.PI * 2);
+            ctx.arc(currentX + signW - 11, currentY + 11, 4.5, 0, Math.PI * 2);
             ctx.fill();
 
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(currentX + 12, currentY + 12, 1.5, 0, Math.PI * 2);
-            ctx.arc(currentX + signW - 16, currentY + 12, 1.5, 0, Math.PI * 2);
+            ctx.arc(currentX + 11, currentY + 11, 2, 0, Math.PI * 2);
+            ctx.arc(currentX + signW - 11, currentY + 11, 2, 0, Math.PI * 2);
             ctx.fill();
           }
         }
@@ -4869,35 +4878,56 @@ class MedellinGame {
     const p = this.player;
 
     if (this.currentStage === 3) {
-      // Marcador HUD Retro Arcade Completo (Fijo, nunca sacudido por vibración de cámara)
-      ctx.fillStyle = 'rgba(10, 15, 25, 0.88)';
-      ctx.fillRect(this.vWidth / 2 - 170, 8, 340, 26);
+      // Marcador HUD Retro Arcade: Únicamente en Esquina Superior Izquierda y Derecha (Centro 100% Despejado)
+      const activeHero = this.roster.find(c => c.id === this.selectedCharId) || this.roster[0];
+
+      // 1. ESQUINA SUPERIOR IZQUIERDA: Vida del Jugador + Velocímetro Digital
+      ctx.save();
+      ctx.fillStyle = 'rgba(15, 12, 28, 0.90)';
+      ctx.fillRect(12, 10, 160, 42);
       ctx.strokeStyle = '#f1c40f';
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(this.vWidth / 2 - 170, 8, 340, 26);
+      ctx.strokeRect(12, 10, 160, 42);
 
-      // Barra de vida de Juancho
+      // 1P Nombre del Héroe Activo
+      ctx.fillStyle = '#f39c12';
+      ctx.font = 'bold 9px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(`1P ${activeHero.name}`, 18, 22);
+
+      // Barra de Vida Dinámica
       const hpRatio = Math.max(0, p.hp / (p.maxHp || 100));
-      ctx.fillStyle = '#c0392b';
-      ctx.fillRect(this.vWidth / 2 - 160, 14, 90, 14);
+      ctx.fillStyle = '#7a1d1d';
+      ctx.fillRect(18, 26, 148, 10);
       ctx.fillStyle = hpRatio > 0.4 ? '#2ecc71' : '#e74c3c';
-      ctx.fillRect(this.vWidth / 2 - 160, 14, 90 * hpRatio, 14);
+      ctx.fillRect(18, 26, 148 * hpRatio, 10);
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 1;
-      ctx.strokeRect(this.vWidth / 2 - 160, 14, 90, 14);
+      ctx.strokeRect(18, 26, 148, 10);
 
-      // Nombre del héroe activo en el marcador arcade
-      const activeHero = this.roster.find(c => c.id === this.selectedCharId) || this.roster[0];
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 8px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(activeHero.name, this.vWidth / 2 - 115, 24);
-
-      // Telemetría de descenso
+      // Velocímetro digital en tiempo real
       ctx.fillStyle = '#f1c40f';
-      ctx.font = '900 9px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText("DESCENSO: " + Math.floor(this.canal.distance / 10) + "m | VEL: " + Math.round(this.canal.speed) + " KM/H", this.vWidth / 2 - 58, 24);
+      ctx.font = '900 8.5px monospace';
+      ctx.fillText(`⚡ VEL: ${Math.round(this.canal.speed)} KM/H`, 18, 47);
+      ctx.restore();
+
+      // 2. ESQUINA SUPERIOR DERECHA: Telemetría de Distancia (Visible cuando no hay aviso activo)
+      ctx.save();
+      const hs = this.canal.highwaySigns;
+      const hasSign = hs && hs.cornerAlpha > 0 && hs.activeSignIndex >= 0;
+      if (!hasSign) {
+        ctx.fillStyle = 'rgba(15, 12, 28, 0.85)';
+        ctx.fillRect(this.vWidth - 132, 10, 120, 22);
+        ctx.strokeStyle = '#2ecc71';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(this.vWidth - 132, 10, 120, 22);
+
+        ctx.fillStyle = '#2ecc71';
+        ctx.font = '900 8.5px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(`DESCENSO: ${Math.floor(this.canal.distance / 10)}m`, this.vWidth - 72, 24);
+      }
+      ctx.restore();
       return;
     }
 

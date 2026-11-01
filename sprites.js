@@ -231,11 +231,12 @@ class SpriteManager {
       'debris_asphalt_rock': 'assets/debris_asphalt_rock.png',
       'debris_sludge_splash': 'assets/debris_sludge_splash.png',
 
-      // Letreros Viales Verdes Cuadrados (Tránsito Medellín)
-      'sign_viaducto_5km': 'assets/sign_viaducto_5km.png',
-      'sign_viaducto_2km': 'assets/sign_viaducto_2km.png',
-      'sign_viaducto_1km': 'assets/sign_viaducto_1km.png',
-      'sign_viaducto_entry': 'assets/sign_viaducto_entry.png',
+      // Letreros Viales Verdes Cuadrados Simplificados (Soterrado Medellín)
+      'sign_soterrado_5km': 'assets/sign_soterrado_5km.png',
+      'sign_soterrado_3km': 'assets/sign_soterrado_3km.png',
+      'sign_soterrado_2km': 'assets/sign_soterrado_2km.png',
+      'sign_soterrado_1km': 'assets/sign_soterrado_1km.png',
+      'sign_soterrado_50m': 'assets/sign_soterrado_50m.png',
 
       // Obstáculos Urbanos de la Canalización (Intactos y Destruidos/Hit)
       'obs_gamin_dormido': 'assets/obs_gamin_dormido.png',
