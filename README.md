@@ -9,7 +9,7 @@
 ## 🎮 Acerca del Juego
 Videojuego retro arcade de plataformas y combate callejero ambientado en la ciudad de Medellín, Colombia. Desarrollado con HTML5 Canvas, Web Audio API y físicas nativas en JavaScript puro a 60 FPS, con soporte para teclado en PC y mandos táctiles virtuales adaptados para smartphones y tablets.
 
-📖 **Guion Oficial & Biblia Narrativa Completa:** [Consulta el GUION.md aquí](file:///d:/Desktop/Juegos/villa-aburra-game/GUION.md) para leer la historia detallada, los diálogos costumbristas paisas, el origen cómic de la rata mutante, las frases de los héroes y el desenlace cinematográfico del Soterrado.
+📖 **Guion Oficial & Biblia Narrativa Completa:** [Consulta el GUION.md aquí](GUION.md) para leer la historia detallada, los diálogos costumbristas paisas, el origen cómic de la rata mutante, las frases de los héroes y el desenlace cinematográfico del Soterrado.
 
 ### 🏙️ Los 3 Niveles del Juego:
 1. **Nivel 1: La Villa del Aburrá & El Viaducto del Metro**
