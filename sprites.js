@@ -159,6 +159,43 @@ class SpriteManager {
       'gloria_downhill_slide': 'assets/gloria_downhill_slide.png',
 
       // ==============================================================
+      // 5B. LUCHADOR PLAYABLE: EL FUISIOSO (EL HINCHA VIRAL DE MEDELLÍN)
+      // ==============================================================
+      'fuisioso_idle': 'assets/fuisioso_idle.png',
+      'fuisioso_idle1': 'assets/fuisioso_idle1.png',
+      'fuisioso_idle2': 'assets/fuisioso_idle2.png',
+      'fuisioso_idle3': 'assets/fuisioso_idle3.png',
+      'fuisioso_walk1': 'assets/fuisioso_walk1.png',
+      'fuisioso_walk2': 'assets/fuisioso_walk2.png',
+      'fuisioso_walk3': 'assets/fuisioso_walk3.png',
+      'fuisioso_run_1': 'assets/fuisioso_run_1.png',
+      'fuisioso_run_2': 'assets/fuisioso_run_2.png',
+      'fuisioso_run_3': 'assets/fuisioso_run_3.png',
+      'fuisioso_run_4': 'assets/fuisioso_run_4.png',
+      'fuisioso_run_5': 'assets/fuisioso_run_5.png',
+      'fuisioso_run_6': 'assets/fuisioso_run_6.png',
+      'fuisioso_jump': 'assets/fuisioso_jump.png',
+      'fuisioso_jump_ascend': 'assets/fuisioso_jump_ascend.png',
+      'fuisioso_jump_peak': 'assets/fuisioso_jump_peak.png',
+      'fuisioso_jump_descend': 'assets/fuisioso_jump_descend.png',
+      'fuisioso_jumpkick': 'assets/fuisioso_jumpkick.png',
+      'fuisioso_punch': 'assets/fuisioso_punch.png',
+      'fuisioso_punch_jab': 'assets/fuisioso_punch_jab.png',
+      'fuisioso_punch_cross': 'assets/fuisioso_punch_cross.png',
+      'fuisioso_punch_hook': 'assets/fuisioso_punch_hook.png',
+      'fuisioso_kick': 'assets/fuisioso_kick.png',
+      'fuisioso_kick_roundhouse': 'assets/fuisioso_kick_roundhouse.png',
+      'fuisioso_kick_low': 'assets/fuisioso_kick_low.png',
+      'fuisioso_kick_dragon': 'assets/fuisioso_kick_dragon.png',
+      'fuisioso_blitz': 'assets/fuisioso_blitz.png',
+      'fuisioso_suplex': 'assets/fuisioso_suplex.png',
+      'fuisioso_hurt': 'assets/fuisioso_hurt.png',
+      'fuisioso_rail': 'assets/fuisioso_rail.png',
+      'fuisioso_downhill_slide': 'assets/fuisioso_downhill_slide.png',
+      'fuisioso_eat': 'assets/fuisioso_eat.png',
+      'fuisioso_sniff': 'assets/fuisioso_sniff.png',
+
+      // ==============================================================
       // 6. ENEMIGO 1: GAMÍN DE LA LADERA (ANIMACIONES 60 FPS)
       // ==============================================================
       'gamin_walk_1': 'assets/gamin_walk_1.png',

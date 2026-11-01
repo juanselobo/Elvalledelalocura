@@ -90,8 +90,8 @@ class MedellinGame {
         speed: 5,
         power: 4,
         tech: 4,
-        status: '🔒 NIVEL 3',
-        ready: false,
+        status: '★ LISTO ★',
+        ready: true,
         color: '#27ae60',
         portrait: 'portrait_fuisioso'
       },
@@ -3895,6 +3895,10 @@ class MedellinGame {
       window.spriteManager.drawSprite(ctx, idleFrames[fIdx], sprX, sprY, true, 1.0, 0, 1.6, 1.6);
     } else if (selChar.id === 'gloria') {
       const idleFrames = ['gloria_idle1', 'gloria_idle2', 'gloria_idle3', 'gloria_idle2'];
+      const fIdx = Math.floor(time / 220) % idleFrames.length;
+      window.spriteManager.drawSprite(ctx, idleFrames[fIdx], sprX, sprY, true, 1.0, 0, 1.6, 1.6);
+    } else if (selChar.id === 'fuisioso') {
+      const idleFrames = ['fuisioso_idle1', 'fuisioso_idle2', 'fuisioso_idle3', 'fuisioso_idle2'];
       const fIdx = Math.floor(time / 220) % idleFrames.length;
       window.spriteManager.drawSprite(ctx, idleFrames[fIdx], sprX, sprY, true, 1.0, 0, 1.6, 1.6);
     } else {
