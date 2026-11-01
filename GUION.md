@@ -379,7 +379,7 @@ Música: "Medellín Drift 300 KM/H" (Eurobeat / D&B acelerado a 160 BPM con pito
   - **Subtexto:** `AUTOPISTA SUR`
 - **HUD FLOTANTE:** `🚦 SOTERRADO A 1 KM` (Color rojo de advertencia).
 
-#### 🚨 Aviso 5: Alerta Crítica (Segundo 38.7 | ~2.6s después | Velocidad: ~300 km/h)
+#### 🚨 Aviso 5: Alerta Crítica (Segundo 40.7 | 4.6s después / +2s de espera | Velocidad: ~300 km/h)
 - **SFX:** Sirena vial intermitente.
 - **GRÁFICO:** Señal cuadrada de emergencia con **balizas ámbar intermitentes** en las esquinas:
   - **Texto Superior:** `SOTERRADO A 50 M`
@@ -391,7 +391,7 @@ Música: "Medellín Drift 300 KM/H" (Eurobeat / D&B acelerado a 160 BPM con pito
 ### Escena 3.5: El Clímax — La Boca del Soterrado y el Choque Fatal de la Rata
 *(Diseño narrativo del desenlace final del Nivel 3).*
 
-- **SEGUNDO 41.5 – 43.5 (VELOCIDAD MÁXIMA: 300 KM/H):**
+- **SEGUNDO 43.5 – 45.5 (VELOCIDAD MÁXIMA: 300 KM/H):**
   - Al fondo de la rampa diagonal aparece de repente la gigantesca estructura de ingeniería civil paisa: **el Viaducto Soterrado de la Autopista Sur**.
   - El soterrado es un túnel de concreto reforzado de gálibo estándar ($4.5\text{ metros}$ de altura), con luces fluorescentes amarillas en el interior y gruesos pilares de concreto macizo en la entrada.
   - Para un ser humano en patines o zapatillas, el orificio es suficiente para entrar deslizándose a ras de piso. Para la Rata Mutante, que mide más de 6 metros de envergadura, el túnel es una trampa mortal sin escapatoria.

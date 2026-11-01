@@ -4177,7 +4177,7 @@ class MedellinGame {
         },
         {
           id: '50m',
-          triggerTime: 38.7, // ~2.6 segundos después de 1 km
+          triggerTime: 40.7, // +4.6 segundos (2 segundos más de espera tras 1 km)
           spriteKey: 'sign_soterrado_50m',
           title: 'SOTERRADO A 50 M',
           subtext: '¡ENTRADA INMINENTE!',
@@ -4194,11 +4194,11 @@ class MedellinGame {
     // Sistema del Clímax: Ingreso al Soterrado y Choque de la Rata Mutante
     this.canal.climax = {
       state: 'none',          // 'none', 'approaching', 'entered', 'crashed', 'victory'
-      triggerTime: 41.5,      // ~2.8s tras la señal de 50 m
+      triggerTime: 43.5,      // ~2.8s tras la señal de 50 m (con 40.7s para el aviso de 50 m)
       portalX: 1150,          // Comienza a la derecha en la rampa
-      portalY: -174,          // Nivel de la rampa del canal
-      portalW: 280,
-      portalH: 240,
+      portalY: -190,          // Nivel alineado de la rampa del canal
+      portalW: 320,           // Viaducto elaborado
+      portalH: 260,
       hitstopTimer: 0,
       victoryTimer: 0,
       ratCrashed: false,
