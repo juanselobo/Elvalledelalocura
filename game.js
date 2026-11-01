@@ -1109,6 +1109,7 @@ class MedellinGame {
   }
 
   switchStage(stageNum) {
+    this.gameState = 'PLAYING';
     this.currentStage = stageNum;
     this.stageTransitionTimer = 1.0;
     if (window.updateActiveStageButton) window.updateActiveStageButton(stageNum);
@@ -4613,24 +4614,20 @@ class MedellinGame {
 
         const obsImg = window.spriteManager.getImage(sprKey);
         if (obsImg && obsImg.complete) {
-          let drawW = obs.w;
-          let drawH = obs.h;
-          let drawY = obsLocalY - obs.h + 2;
-          if (isHit) {
-            // Proporción de aspecto nativa del sprite para evitar cualquier aplastamiento o deformación
-            const aspect = (obsImg.naturalWidth && obsImg.naturalHeight) ? (obsImg.naturalWidth / obsImg.naturalHeight) : 1.0;
-            const targetDim = Math.max(obs.w, obs.h) * 1.08;
-            if (aspect >= 1.0) {
-              drawW = Math.round(targetDim);
-              drawH = Math.round(targetDim / aspect);
-            } else {
-              drawH = Math.round(targetDim);
-              drawW = Math.round(targetDim * aspect);
-            }
-            drawY = obsLocalY - drawH + 2;
-            if (obs.hitTimer > 0 && obs.hitType === 'kick') {
-              drawY -= Math.sin((obs.hitTimer / 0.65) * Math.PI) * 28; // Salto en el aire al patearlo
-            }
+          // Relación de aspecto nativa del sprite para evitar cualquier deformación tanto intacto como destruido
+          const aspect = (obsImg.naturalWidth && obsImg.naturalHeight) ? (obsImg.naturalWidth / obsImg.naturalHeight) : 1.0;
+          const targetDim = Math.max(obs.w, obs.h) * (isHit ? 1.08 : 1.0);
+          let drawW, drawH;
+          if (aspect >= 1.0) {
+            drawW = Math.round(targetDim);
+            drawH = Math.round(targetDim / aspect);
+          } else {
+            drawH = Math.round(targetDim);
+            drawW = Math.round(targetDim * aspect);
+          }
+          let drawY = obsLocalY - drawH + 2;
+          if (isHit && obs.hitTimer > 0 && obs.hitType === 'kick') {
+            drawY -= Math.sin((obs.hitTimer / 0.65) * Math.PI) * 28; // Salto en el aire al patearlo
           }
           ctx.drawImage(obsImg, Math.round(obsX - drawW / 2), Math.round(drawY), drawW, drawH);
         } else {
@@ -4640,42 +4637,61 @@ class MedellinGame {
       }
     });
 
-    // 4. JUGADOR (JUANCHO) - JUGABLE Y CON EL MISMO DISEÑO GRÁFICO DE PIXEL ART QUE LOS OTROS NIVELES
+    // 4. JUGADOR PLAYABLE (JUANCHO, LINA, DOÑA GLORIA, ETC.) CON SPRITES NATIVOS Y AUTÉNTICOS
     const p = this.player;
-    let pSprite = 'player_kick_low'; // Sprite nativo oficial de agachado / deslizamiento
     const isPlayerBlink = p.invulnerableTimer > 0 && Math.floor(Date.now() / 65) % 2 === 0;
     const pAlpha = isPlayerBlink ? 0.5 : 1.0;
     let rotation = 0;
 
+    const charId = this.selectedCharId || 'juancho';
+    const charPrefix = (charId !== 'juancho') ? (charId + '_') : 'player_';
+
+    let baseAction = 'downhill_slide';
     if (p.action === 'hurt') {
-      pSprite = 'player_hurt';
+      baseAction = 'hurt';
     } else if (p.action === 'doublejump') {
-      // Vuelta 360° en el aire con giro acrobático (usando player_jump_peak)
-      pSprite = 'player_jump_peak';
+      // Vuelta 360° en el aire con giro acrobático (usando jump_peak)
+      baseAction = 'jump_peak';
       const dur = p.doubleJumpDuration || 0.42;
       const spinProgress = Math.max(0, Math.min(1, 1 - (p.actionTimer / dur)));
       rotation = spinProgress * Math.PI * 2;
     } else if (!p.grounded) {
       if (p.action === 'jumpkick') {
-        pSprite = 'player_jumpkick';
+        baseAction = 'jumpkick';
       } else if (p.vy < -80) {
-        pSprite = 'player_jump_ascend';
+        baseAction = 'jump_ascend';
       } else if (Math.abs(p.vy) <= 80) {
-        pSprite = 'player_jump_peak';
+        baseAction = 'jump_peak';
       } else {
-        pSprite = 'player_jump_descend';
+        baseAction = 'jump_descend';
       }
     } else if (p.action === 'kick') {
-      pSprite = 'player_kick_dragon';
+      baseAction = 'kick_dragon';
     } else {
-      // Posición de deslizamiento / crouching oficial del personaje
-      pSprite = 'player_kick_low';
+      // Posición oficial de descenso / deslizamiento por la rampa
+      baseAction = 'downhill_slide';
+    }
+
+    // Resolver sprite de personaje con fallback inteligente
+    let pSprite = charPrefix + baseAction;
+    if (!window.spriteManager.getImage(pSprite)) {
+      if (baseAction === 'downhill_slide') {
+        if (window.spriteManager.getImage(charPrefix + 'kick_low')) {
+          pSprite = charPrefix + 'kick_low';
+        } else if (window.spriteManager.getImage('player_downhill_slide')) {
+          pSprite = 'player_downhill_slide';
+        } else {
+          pSprite = 'player_kick_low';
+        }
+      } else {
+        pSprite = 'player_' + baseAction;
+      }
     }
 
     const pDrawX = Math.round(p.slopeX || 260);
     const pDrawY = Math.round(30 + (p.laneY || 16) - (p.elevY || 0));
 
-    // Chispas de fricción bajo los tenis cuando raspa el concreto
+    // Chispas de fricción bajo los tenis / patines cuando raspa el concreto
     if (p.grounded) {
       const sparkCycle = Math.floor(Date.now() / 50) % 3;
       ctx.fillStyle = '#f1c40f';
@@ -4688,7 +4704,7 @@ class MedellinGame {
       }
     }
 
-    // Dibujar a Juancho con el motor nativo de sprites (misma escala, anclaje y arte pixel)
+    // Dibujar al personaje con el motor nativo de sprites (misma escala, anclaje y arte pixel)
     window.spriteManager.drawSprite(ctx, pSprite, pDrawX, pDrawY, true, pAlpha, rotation);
 
     // (Pista de concreto del canal despejada para máxima legibilidad sin elementos móviles obstructivos)
@@ -4870,10 +4886,12 @@ class MedellinGame {
       ctx.lineWidth = 1;
       ctx.strokeRect(this.vWidth / 2 - 160, 14, 90, 14);
 
+      // Nombre del héroe activo en el marcador arcade
+      const activeHero = this.roster.find(c => c.id === this.selectedCharId) || this.roster[0];
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 8px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText("JUANCHO", this.vWidth / 2 - 115, 24);
+      ctx.fillText(activeHero.name, this.vWidth / 2 - 115, 24);
 
       // Telemetría de descenso
       ctx.fillStyle = '#f1c40f';

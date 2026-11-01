@@ -203,11 +203,7 @@ class SpriteManager {
       'rappi_moto': 'assets/rappi_moto.png',
       'flying_burger': 'assets/flying_burger.png',
 
-      // 6. NPC / Aliada Especial: Doña Gloria del Metrocable
-      'gloria_idle': 'assets/gloria_idle.png',
-      'gloria_walk1': 'assets/gloria_walk1.png',
-      'gloria_walk2': 'assets/gloria_walk2.png',
-      'gloria_walk3': 'assets/gloria_walk3.png',
+      // 6. NPC / Aliada Especial: Puesto de Empanadas
       'empanadas_cart': 'assets/empanadas_cart.png',
 
       // 7. Ítems Paisas Coleccionables
