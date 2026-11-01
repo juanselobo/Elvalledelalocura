@@ -420,6 +420,92 @@ Música: "Medellín Drift 300 KM/H" (Eurobeat / D&B acelerado a 160 BPM con pito
 
 ---
 
+```
+================================================================================
+ACTO IV: LA GRAN INUNDACIÓN DEL SOTERRADO (MODO SUBWAY SURFERS PAISA)
+Escenario: Interior del Soterrado de Parques del Río completamente inundado.
+           2.5 metros de aguas turbias color café con leche, turbinas axiales
+           colgando del techo y trancón monumental de vehículos sumergidos.
+Música:    "Soterrado Splash & Rush" (Cumbia Electrónica 16-Bit / Synthwave Paisa
+           con bocinas de taxi y ecos de túnel subterráneo a 145 BPM).
+================================================================================
+```
+
+### 1. SINOPSIS NARRATIVA & CONTEXTO CULTURAL
+Tras escapar por milésimas de segundo de la Rata Colosal —la cual quedó incrustada y noqueada contra el muro de concreto del portal exterior de Parques del Río con un chichón gigante y estrellas de 16 bits orbitando—, Juancho se desliza victorioso hacia la penumbra del viaducto.
+
+Sin embargo, el alivio dura apenas un instante: **¡Fiel a la tradición de Medellín durante los aguaceros torrenciales, el Soterrado está inundado hasta el copete de agua turbia!**
+
+Las aguas desbordadas del Río Medellín y las quebradas aledañas han convertido el viaducto en una inmensa piscina de barro líquido. Un descomunal trancón quedó sepultado hasta las ventanillas:
+- **Taxis Hyundai Amarillos** con los taxistas desesperados sobre el techo agitando trapos blancos.
+- **Carros Particulares Blancos** flotando a la deriva con las luces estacionarias encendidas bajo el agua.
+- **Buses Coometropol (Circular Sur 302)** varados en los carriles centrales, con Doña Gloria agitando su cartera y vociferando desde el techo.
+- **Repartidores de Rappi** en cuclillas sobre capós flotantes protegiendo sus maletas térmicas anaranjadas para que no se enfríen las salchipapas.
+
+Juancho no puede cruzar a pie ni rodar en su tabla por el asfalto sumergido. Su única salida hacia San Juan es **un parkour acrobático estilo Subway Surfers**, saltando de techo en techo sobre los vehículos flotantes, rescatando a los paisas atrapados y agachándose bajo los ductos de ventilación antes de que el nivel del agua termine de tapar el túnel.
+
+---
+
+### 2. MECÁNICAS DE JUEGO (SUBWAY SURFERS PAISA)
+
+#### A. Navegación en 3 Carriles con Avance Frontal Continuo
+- **Auto-Scroll Longitudinal:** La cámara empuja hacia adelante a velocidad constante ($120\text{ a }180\text{ km/h}$).
+- **3 Carriles de Salto:**
+  - `Carril Izquierdo` (Zona de taxis y bermas con rejillas de drenaje).
+  - `Carril Central` (Zona de buses Coometropol y camionetas pesadas).
+  - `Carril Derecho` (Zona de autos compactos y alcantarillas con corriente rápida).
+- **Controles de Movimiento:**
+  - `Flechas Izquierda / Derecha` o `A / D`: Cambio instantáneo o fluido de carril.
+  - `Flecha Arriba`, `W` o `Espacio`: Salto acrobático entre techos / Doble salto para alcanzar buses altos.
+  - `Flecha Abajo`, `S` o `C`: Deslizamiento a ras del techo (*Slide*) para pasar bajo obstáculos aéreos.
+
+#### B. Tipos de Plataformas (Vehículos Sumergidos)
+| Tipo de Vehículo | Altura / Nivel | Longitud | Comportamiento Especial |
+| :--- | :--- | :--- | :--- |
+| **Taxi Hyundai Amarillo** | Media ($1.0\times$) | Corta-Media | Plataforma estándar. Rebota suavemente sobre las olas. |
+| **Sedán / Hatchback Blanco** | Media ($1.0\times$) | Corta | Plataforma inestable. Si el jugador se queda más de $1.2\text{ s}$, el carro se hunde levemente. |
+| **Bus Coometropol (Circular Sur)** | Alta ($1.6\times$) | Muy Larga | Requiere salto en carrera o doble salto para subir. Permite correr un tramo prolongado a toda velocidad. |
+| **Capós y Maleteros Flotantes** | Baja ($0.5\times$) | Mínima | Puntos de apoyo rápidos entre grandes distancias. Se hunden al instante tras el impacto. |
+
+#### C. Sistema de Rescate Paisa (`+500 PUNTOS` & Voces Características)
+Al saltar sobre el techo de un vehículo ocupado por un paisa en apuros, el héroe lo rescata automáticamente al contacto:
+1. **El Taxista Paisa (Techo de Taxi):**
+   - *Frase:* *"¡Gracias mijo, que este carro todavía lo debo y mañana me toca pagar el producido!"*
+   - *Efecto:* `¡RESCATE PAISA! +500 PTS` + Doble bocinazo de taxi (`playCarHorn`).
+2. **Doña Gloria (Techo de Bus Coometropol):**
+   - *Frase:* *"¡Ave María Purísima, bájeme de este techo que me va a dar un patatús con tanta agua sucia!"*
+   - *Efecto:* `¡RESCATE LEGENDARIO! +1000 PTS` + Recarga completa de salud (+50 HP).
+3. **Repartidor de Rappi (Capó Flotante):**
+   - *Frase:* *"¡Se salvaron las empanadas y la salchipapa! ¡Tenga de propina este pandebono!"*
+   - *Efecto:* `¡ENTREGA SALVADA! +500 PTS` + Ítem reconstituyente (+25 HP).
+
+#### D. Peligros & Obstáculos del Soterrado
+1. **Inmersión en Agua Turbia (-20 HP & Ralentización):**
+   - Caer entre los espacios vacíos sumerge al jugador en el agua sucia del soterrado (`playWaterSplash`).
+   - El héroe pierde velocidad de inmediato y debe saltar rápidamente al carro más cercano antes de ahogarse.
+2. **Tuberías Bajas de Ventilación & Vigas de Gálibo:**
+   - Estructuras transversales de acero con franjas amarillas y negras colgando a baja altura (`¡CUIDADO! GÁLIBO BAJO`).
+   - El jugador debe agacharse deslizándose por el techo (`Slide`) para no impactar de cabeza.
+3. **Carros a la Deriva y Oleaje:**
+   - Olas que hacen cabecear las plataformas y vehículos empujados en contrasentido por la corriente.
+
+---
+
+### 3. ARTE PIXEL ART & ASSETS OFICIALES INTEGRADOS
+- [`cutscene_soterrado_inundado.png`](file:///d:/Desktop/Juegos/villa-aburra-game/assets/cutscene_soterrado_inundado.png) (640x360 px, Resolución nativa arcade):
+  - Interior en perspectiva profunda con turbinas axiales de techo y luminarias fluorescentes ámbar.
+  - Gran masa de agua café con leche con reflejos ondulantes dorados y rojos de luces de freno.
+  - Bus Coometropol, Taxi amarillo y carro blanco con luces sumergidas encendidas.
+  - Juancho en el umbral seco en primer plano con su tabla de skate, contemplando la inundación.
+- [`car_taxi_flooded.png`](file:///d:/Desktop/Juegos/villa-aburra-game/assets/car_taxi_flooded.png): Plataforma de taxi sumergido.
+- [`car_sedan_flooded.png`](file:///d:/Desktop/Juegos/villa-aburra-game/assets/car_sedan_flooded.png): Plataforma de sedán blanco sumergido.
+- [`bus_coometropol_flooded.png`](file:///d:/Desktop/Juegos/villa-aburra-game/assets/bus_coometropol_flooded.png): Plataforma de bus Coometropol de techo alto.
+- [`npc_stranded_taxista.png`](file:///d:/Desktop/Juegos/villa-aburra-game/assets/npc_stranded_taxista.png): Taxista pidiendo auxilio con pañuelo blanco.
+- [`npc_stranded_gloria.png`](file:///d:/Desktop/Juegos/villa-aburra-game/assets/npc_stranded_gloria.png): Doña Gloria agitando su bolso en el techo.
+- [`hazard_low_pipe.png`](file:///d:/Desktop/Juegos/villa-aburra-game/assets/hazard_low_pipe.png): Viga de gálibo bajo con franjas de advertencia.
+
+---
+
 ## 🗣️ GLOSARIO Y VOCABULARIO PAISA URBANO
 
 Para mantener la autenticidad lingüística y cultural en todas las líneas de voz, carteles y diálogos futuros:

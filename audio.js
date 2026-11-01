@@ -903,6 +903,82 @@ class RetroAudio {
   }
 
   // Chime de anuncio de tránsito vial / Metro de Medellín
+  playCarHorn() {
+    if (this.muted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    // Doble bocinazo agudo arcade retro de taxi paisa (beep-beep)
+    [0.0, 0.14].forEach(tOffset => {
+      const osc1 = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc1.type = 'sawtooth';
+      osc2.type = 'sawtooth';
+      osc1.frequency.setValueAtTime(420, now + tOffset);
+      osc2.frequency.setValueAtTime(495, now + tOffset);
+
+      gain.gain.setValueAtTime(0.001, now + tOffset);
+      gain.gain.linearRampToValueAtTime(0.18, now + tOffset + 0.01);
+      gain.gain.linearRampToValueAtTime(0.001, now + tOffset + 0.10);
+
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc1.start(now + tOffset);
+      osc2.start(now + tOffset);
+      osc1.stop(now + tOffset + 0.10);
+      osc2.stop(now + tOffset + 0.10);
+    });
+  }
+
+  playWaterSplash() {
+    if (this.muted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    // Chapuzón y burbujeo en el agua turbia del soterrado
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(160, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.28);
+
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.linearRampToValueAtTime(0.01, now + 0.28);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.28);
+
+    this.playNoise(0.24, 0.35, 600, 'bandpass');
+  }
+
+  playRescueJingle() {
+    if (this.muted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    // Campana de rescate triunfal arpegiada (Do - Mi - Sol - Do agudo)
+    const notes = [523.25, 659.25, 783.99, 1046.50];
+    notes.forEach((freq, idx) => {
+      const t = now + idx * 0.08;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t);
+
+      gain.gain.setValueAtTime(0.001, t);
+      gain.gain.linearRampToValueAtTime(0.22, t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.30);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t);
+      osc.stop(t + 0.30);
+    });
+  }
+
   playTransitChime() {
     if (this.muted || !this.ctx) return;
     const now = this.ctx.currentTime;

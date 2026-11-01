@@ -242,6 +242,15 @@ class SpriteManager {
       'soterrado_tunnel_portal': 'assets/soterrado_tunnel_portal.png',
       'rata_colosal_crashed': 'assets/rata_colosal_crashed.png',
 
+      // Nivel 4: Soterrado Inundado (Subway Surfers Paisa)
+      'cutscene_soterrado_inundado': 'assets/cutscene_soterrado_inundado.png',
+      'car_taxi_flooded': 'assets/car_taxi_flooded.png',
+      'car_sedan_flooded': 'assets/car_sedan_flooded.png',
+      'bus_coometropol_flooded': 'assets/bus_coometropol_flooded.png',
+      'npc_stranded_taxista': 'assets/npc_stranded_taxista.png',
+      'npc_stranded_gloria': 'assets/npc_stranded_gloria.png',
+      'hazard_low_pipe': 'assets/hazard_low_pipe.png',
+
       // Obstáculos Urbanos de la Canalización (Intactos y Destruidos/Hit)
       'obs_gamin_dormido': 'assets/obs_gamin_dormido.png',
       'obs_gamin_dormido_hit': 'assets/obs_gamin_dormido_hit.png',
