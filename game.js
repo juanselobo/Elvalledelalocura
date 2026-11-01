@@ -69,14 +69,14 @@ class MedellinGame {
         epithet: 'REINA DEL PATÍN DE BELÉN',
         alias: 'LA PATINADERA',
         style: 'Velocista Aérea / Patines en Línea',
-        bio: 'Campeona callejera del patinódromo. Ataques aéreos y ráfagas de patadas.',
+        bio: 'Campeona callejera del patinódromo. Ataques aéreos y ráfagas de patadas sobre patines en línea.',
         special: '★ Huracán de Patines & Volea Aérea',
         speed: 5,
         power: 3,
         tech: 4,
-        status: '🔒 NIVEL 2',
-        ready: false,
-        color: '#9b59b6',
+        status: '★ LISTO ★',
+        ready: true,
+        color: '#2ecc71',
         portrait: 'portrait_lina'
       },
       {
@@ -100,14 +100,14 @@ class MedellinGame {
         name: 'DOÑA GLORIA',
         alias: 'LA FRITANGUERA',
         epithet: 'LA MATRIARCA DE LA VILLA',
-        style: 'Fritanguera de Acero / Aliada',
-        bio: 'Alimenta al barrio con sus empanadas de Doña Gloria y castiga a los ladrones.',
+        style: 'Fritanguera de Acero / Matriarca Brawler',
+        bio: 'Alimenta al barrio con sus empanadas y castiga a los maleantes con su legendaria chancleta voladora.',
         special: '★ Tinto Hirviendo & Chancletazo Letal',
-        speed: 2,
+        speed: 3,
         power: 5,
         tech: 4,
-        status: '☕ HISTORIA',
-        ready: false,
+        status: '★ LISTO ★',
+        ready: true,
         color: '#f39c12',
         portrait: 'portrait_gloria'
       },
@@ -291,6 +291,25 @@ class MedellinGame {
     this.lastTime = performance.now();
     this.setupInputs();
     this.setupTouchControls();
+
+    // Check URL parameters for direct scene navigation (debugging & character testing)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const screenParam = urlParams.get('screen');
+      const charParam = urlParams.get('char');
+      const playParam = urlParams.get('play');
+      if (screenParam === 'char_select') {
+        this.gameState = 'CHAR_SELECT';
+        if (charParam === 'lina') this.charSelectIndex = 1;
+        else if (charParam === 'fuisioso') this.charSelectIndex = 2;
+        else if (charParam === 'gloria') this.charSelectIndex = 3;
+        else if (charParam === 'fico') this.charSelectIndex = 4;
+      } else if (playParam) {
+        this.selectedCharId = playParam;
+        this.gameState = 'PLAYING';
+      }
+    } catch (e) {}
+
     this.loop = this.loop.bind(this);
     requestAnimationFrame(this.loop);
   }
@@ -342,6 +361,7 @@ class MedellinGame {
   }
 
   startGameWithCharacter(charId) {
+    this.selectedCharId = charId || 'juancho';
     this.gameState = 'PLAYING';
     this.switchStage(1);
   }
@@ -3129,11 +3149,13 @@ class MedellinGame {
       else if (p.action === 'blitz') {
         pSprite = 'player_blitz';
 
+        const blitzSpr = (this.selectedCharId && this.selectedCharId !== 'juancho') ? (this.selectedCharId + '_blitz') : pSprite;
+        const finalBlitz = (window.spriteManager && window.spriteManager.images[blitzSpr]) ? blitzSpr : pSprite;
         ctx.save();
         ctx.globalAlpha = 0.35;
-        window.spriteManager.drawSprite(ctx, pSprite, item.x + (p.facingRight ? -24 : 24), renderY, p.facingRight);
+        window.spriteManager.drawSprite(ctx, finalBlitz, item.x + (p.facingRight ? -24 : 24), renderY, p.facingRight);
         ctx.globalAlpha = 0.18;
-        window.spriteManager.drawSprite(ctx, pSprite, item.x + (p.facingRight ? -46 : 46), renderY, p.facingRight);
+        window.spriteManager.drawSprite(ctx, finalBlitz, item.x + (p.facingRight ? -46 : 46), renderY, p.facingRight);
         ctx.restore();
       } 
       // 12. RODADA EVASIVA CON VOLTERETA 360° REAL O DOBLE SALTO AÉREO
@@ -3177,7 +3199,16 @@ class MedellinGame {
         pSprite = 'player_eat';
       }
 
-      window.spriteManager.drawSprite(ctx, pSprite, item.x, renderY, p.facingRight, pAlpha, rotation, scaleX, scaleY, offsetX, offsetY);
+      // Resolución dinámica de sprite por personaje (Juancho / Lina)
+      let resolvedPlayerSprite = pSprite;
+      if (this.selectedCharId && this.selectedCharId !== 'juancho') {
+        const charSpecific = pSprite.replace(/^player_/, this.selectedCharId + '_');
+        if (window.spriteManager && window.spriteManager.images[charSpecific]) {
+          resolvedPlayerSprite = charSpecific;
+        }
+      }
+
+      window.spriteManager.drawSprite(ctx, resolvedPlayerSprite, item.x, renderY, p.facingRight, pAlpha, rotation, scaleX, scaleY, offsetX, offsetY);
 
     } else if (item.type === 'enemy') {
       const e = item.data;
@@ -3762,6 +3793,14 @@ class MedellinGame {
 
     if (selChar.id === 'juancho') {
       const idleFrames = ['player_idle1', 'player_idle2', 'player_idle3', 'player_idle2'];
+      const fIdx = Math.floor(time / 220) % idleFrames.length;
+      window.spriteManager.drawSprite(ctx, idleFrames[fIdx], sprX, sprY, true, 1.0, 0, 1.6, 1.6);
+    } else if (selChar.id === 'lina') {
+      const idleFrames = ['lina_idle1', 'lina_idle2', 'lina_idle3', 'lina_idle2'];
+      const fIdx = Math.floor(time / 220) % idleFrames.length;
+      window.spriteManager.drawSprite(ctx, idleFrames[fIdx], sprX, sprY, true, 1.0, 0, 1.6, 1.6);
+    } else if (selChar.id === 'gloria') {
+      const idleFrames = ['gloria_idle1', 'gloria_idle2', 'gloria_idle3', 'gloria_idle2'];
       const fIdx = Math.floor(time / 220) % idleFrames.length;
       window.spriteManager.drawSprite(ctx, idleFrames[fIdx], sprX, sprY, true, 1.0, 0, 1.6, 1.6);
     } else {
@@ -4535,7 +4574,9 @@ class MedellinGame {
 
     ctx.fillStyle = '#f39c12';
     ctx.font = 'bold 9px monospace';
-    ctx.fillText("1P JUANCHO (RAIL-WALKER)", 18, 22);
+    const activeHero = this.roster.find(c => c.id === this.selectedCharId) || this.roster[0];
+    const heroTitle = `1P ${activeHero.name} (${activeHero.alias || activeHero.epithet || 'LUCHADOR'})`;
+    ctx.fillText(heroTitle, 18, 22);
 
     // Fondo rojo de vida perdida
     ctx.fillStyle = '#7a1d1d';
