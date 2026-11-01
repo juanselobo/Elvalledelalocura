@@ -4681,18 +4681,19 @@ class MedellinGame {
       baseAction = 'downhill_slide';
     }
 
-    // Resolver sprite de personaje con fallback inteligente
-    let pSprite = charPrefix + baseAction;
-    if (!window.spriteManager.getImage(pSprite)) {
-      if (baseAction === 'downhill_slide') {
-        if (window.spriteManager.getImage(charPrefix + 'kick_low')) {
-          pSprite = charPrefix + 'kick_low';
-        } else if (window.spriteManager.getImage('player_downhill_slide')) {
-          pSprite = 'player_downhill_slide';
-        } else {
-          pSprite = 'player_kick_low';
-        }
+    // Resolver sprite de personaje auténtico CPS-3 con consistencia total
+    let pSprite;
+    if (baseAction === 'downhill_slide') {
+      if (charId === 'juancho') {
+        pSprite = 'player_kick_low';
       } else {
+        pSprite = window.spriteManager.getImage(charPrefix + 'downhill_slide')
+          ? (charPrefix + 'downhill_slide')
+          : (window.spriteManager.getImage(charPrefix + 'kick_low') ? (charPrefix + 'kick_low') : 'player_kick_low');
+      }
+    } else {
+      pSprite = charPrefix + baseAction;
+      if (!window.spriteManager.getImage(pSprite)) {
         pSprite = 'player_' + baseAction;
       }
     }
