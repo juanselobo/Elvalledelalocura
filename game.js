@@ -4122,7 +4122,7 @@ class MedellinGame {
     this.player.doubleJumped = false;
     this.player.facingRight = true;
 
-    // Sistema de Señalización Vial de Tránsito de Medellín (Autopista / Viaducto)
+    // Sistema de Señalización Vial Cuadrada en Esquina Superior (Tránsito Medellín)
     this.canal.highwaySigns = {
       signs: [
         {
@@ -4130,7 +4130,7 @@ class MedellinGame {
           triggerTime: 27.5,
           spriteKey: 'sign_viaducto_5km',
           title: '5 KM PARA EL VIADUCTO',
-          subtext: 'AUTOPISTA REGIONAL SUR • SISTEMA VIAL DEL RÍO',
+          subtext: 'MEDELLÍN • AUTOPISTA SUR',
           triggered: false
         },
         {
@@ -4138,7 +4138,7 @@ class MedellinGame {
           triggerTime: 30.3,
           spriteKey: 'sign_viaducto_2km',
           title: '2 KM PARA EL VIADUCTO',
-          subtext: 'VIADUCTO METRO / SOTERRADO',
+          subtext: 'SISTEMA VIAL DEL RÍO',
           triggered: false
         },
         {
@@ -4146,7 +4146,7 @@ class MedellinGame {
           triggerTime: 32.5,
           spriteKey: 'sign_viaducto_1km',
           title: '1 KM PARA EL VIADUCTO',
-          subtext: 'CARRIL DERECHO / ACCESO SUBTERRÁNEO',
+          subtext: 'VIADUCTO METRO / ACCESO',
           triggered: false
         },
         {
@@ -4154,17 +4154,14 @@ class MedellinGame {
           triggerTime: 35.1,
           spriteKey: 'sign_viaducto_entry',
           title: 'ESTÁ A PUNTO DE ENTRAR AL VIADUCTO',
-          subtext: '⚠ ATENCIÓN • REDUZCA LA VELOCIDAD ⚠',
+          subtext: '⚠ ALERTA DE TRÁNSITO ⚠',
           triggered: false
         }
       ],
       activeSignIndex: -1,
       activeTimer: 0,
-      bannerSlide: 0,
-      bannerAlpha: 0,
-      gantryX: -999,
-      gantrySpriteKey: null,
-      gantryActive: false
+      cornerSlide: 0,
+      cornerAlpha: 0
     };
   }
 
@@ -4500,7 +4497,7 @@ class MedellinGame {
       }
     });
 
-    // Actualización de los letreros viales verdes estilo Medellín
+    // Actualización de los letreros viales cuadrados en esquina superior (Tránsito Medellín)
     if (this.canal.highwaySigns) {
       const hs = this.canal.highwaySigns;
 
@@ -4511,53 +4508,42 @@ class MedellinGame {
           s.triggered = true;
           hs.activeSignIndex = idx;
           hs.activeTimer = 0;
-          hs.bannerSlide = 0;
-          hs.gantryX = 980; // Aparece al final de la rampa en perspectiva
-          hs.gantrySpriteKey = s.spriteKey;
-          hs.gantryActive = true;
+          hs.cornerSlide = 0;
 
           // Chime sonoro auténtico de anuncio vial del Metro
           if (window.retroAudio && window.retroAudio.playTransitChime) {
             window.retroAudio.playTransitChime();
           }
 
-          // Notificación flotante de tránsito
+          // Notificación flotante de tránsito breve
           const pCoords = this.canalToWorldCoords(p.slopeX || 350, 20);
           const alertColor = idx === 3 ? '#e74c3c' : '#2ecc71';
-          this.addFloatingText(pCoords.x, pCoords.y - 30, `🚦 [TRÁNSITO MEDELLÍN] ${s.title}`, alertColor);
+          this.addFloatingText(pCoords.x, pCoords.y - 30, `🚦 ${s.title}`, alertColor);
           break;
         }
       }
 
-      // 2. Movimiento del pórtico físico sobre la rampa a la velocidad del canal
-      if (hs.gantryActive) {
-        hs.gantryX -= (this.canal.speed * 2.8) * dt;
-        if (hs.gantryX < -220) {
-          hs.gantryActive = false;
-        }
-      }
-
-      // 3. Animación fluida de entrada, sostén y salida del visor HUD superior
+      // 2. Animación fluida de entrada, sostén estático y salida en la esquina superior
       if (hs.activeSignIndex >= 0) {
         hs.activeTimer += dt;
-        const dur = 2.4; // Duración en pantalla de cada letrero
-        if (hs.activeTimer < 0.22) {
-          // Descenso elástico desde arriba
-          const t = hs.activeTimer / 0.22;
-          hs.bannerSlide = 1 - Math.pow(1 - t, 2);
-          hs.bannerAlpha = t;
+        const dur = 2.7; // Duración cómoda en pantalla
+        if (hs.activeTimer < 0.2) {
+          // Entrada elástica desde la derecha
+          const t = hs.activeTimer / 0.2;
+          hs.cornerSlide = 1 - Math.pow(1 - t, 3);
+          hs.cornerAlpha = t;
         } else if (hs.activeTimer < dur - 0.25) {
-          // Permanencia con máxima nitidez
-          hs.bannerSlide = 1.0;
-          hs.bannerAlpha = 1.0;
+          // Sostén 100% estático para lectura clara e inmediata
+          hs.cornerSlide = 1.0;
+          hs.cornerAlpha = 1.0;
         } else if (hs.activeTimer < dur) {
-          // Salida suave hacia arriba
+          // Salida suave hacia la derecha
           const t = (hs.activeTimer - (dur - 0.25)) / 0.25;
-          hs.bannerSlide = 1.0 - t;
-          hs.bannerAlpha = 1.0 - t;
+          hs.cornerSlide = 1.0 - t;
+          hs.cornerAlpha = 1.0 - t;
         } else {
-          hs.bannerSlide = 0;
-          hs.bannerAlpha = 0;
+          hs.cornerSlide = 0;
+          hs.cornerAlpha = 0;
         }
       }
     }
@@ -4704,75 +4690,7 @@ class MedellinGame {
     // Dibujar a Juancho con el motor nativo de sprites (misma escala, anclaje y arte pixel)
     window.spriteManager.drawSprite(ctx, pSprite, pDrawX, pDrawY, true, pAlpha, rotation);
 
-    // 4.5 PÓRTICO VIAL ELEVADO FÍSICO SOBRE LA CANALIZACIÓN (ESTILO AUTOPISTA REGIONAL MEDELLÍN)
-    if (this.canal.highwaySigns && this.canal.highwaySigns.gantryActive) {
-      const hs = this.canal.highwaySigns;
-      const gx = Math.round(hs.gantryX);
-      if (gx > -140 && gx < 1050) {
-        ctx.save();
-
-        // 1. Sombra proyectada del pórtico sobre el lecho del canal
-        ctx.fillStyle = 'rgba(5, 10, 20, 0.42)';
-        ctx.fillRect(gx - 18, 25, 36, 115);
-
-        // 2. Columna de soporte norte (empotrada en el muro de contención superior)
-        ctx.fillStyle = '#2c3e50';
-        ctx.fillRect(gx - 6, -65, 12, 65);
-        ctx.fillStyle = '#34495e';
-        ctx.fillRect(gx - 4, -63, 8, 61);
-        // Franjas reflectivas de advertencia amarillas y negras en la base
-        for (let stripe = 0; stripe < 4; stripe++) {
-          ctx.fillStyle = stripe % 2 === 0 ? '#f1c40f' : '#111111';
-          ctx.fillRect(gx - 6, -20 + stripe * 5, 12, 4);
-        }
-
-        // 3. Columna de soporte sur (empotrada en el terraplén inferior)
-        ctx.fillStyle = '#2c3e50';
-        ctx.fillRect(gx - 6, 85, 12, 60);
-        ctx.fillStyle = '#34495e';
-        ctx.fillRect(gx - 4, 87, 8, 56);
-        for (let stripe = 0; stripe < 4; stripe++) {
-          ctx.fillStyle = stripe % 2 === 0 ? '#f1c40f' : '#111111';
-          ctx.fillRect(gx - 6, 85 + stripe * 5, 12, 4);
-        }
-
-        // 4. Viga maestra de celosía metálica (overhead crossbeam truss)
-        ctx.fillStyle = '#1e272c';
-        ctx.fillRect(gx - 10, -62, 20, 195);
-        ctx.strokeStyle = '#7f8c8d';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(gx - 10, -62, 20, 195);
-
-        // Celosías diagonales de acero galvanizado
-        ctx.strokeStyle = '#95a5a6';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        for (let zy = -54; zy < 130; zy += 18) {
-          ctx.moveTo(gx - 8, zy);
-          ctx.lineTo(gx + 8, zy + 18);
-          ctx.moveTo(gx + 8, zy);
-          ctx.lineTo(gx - 8, zy + 18);
-        }
-        ctx.stroke();
-
-        // 5. Letrero de tránsito verde montado en el pórtico físico
-        if (hs.gantrySpriteKey) {
-          const signImg = window.spriteManager.getImage(hs.gantrySpriteKey);
-          if (signImg && signImg.complete) {
-            const signW = 190;
-            const signH = 43;
-            const signX = gx - Math.round(signW / 2);
-            const signY = -6; // Centrado sobre el canal
-            // Borde exterior y soporte posterior
-            ctx.fillStyle = 'rgba(0,0,0,0.55)';
-            ctx.fillRect(signX + 3, signY + 3, signW, signH);
-            ctx.drawImage(signImg, signX, signY, signW, signH);
-          }
-        }
-
-        ctx.restore();
-      }
-    }
+    // (Pista de concreto del canal despejada para máxima legibilidad sin elementos móviles obstructivos)
 
     ctx.restore(); // Fin del plano rotado de la rampa
 
@@ -4849,67 +4767,44 @@ class MedellinGame {
       ctx.stroke();
     }
 
-    // 7. LETRERO VIAL HUD SUPERIOR (ESTILO TRÁNSITO MEDELLÍN / AUTOPISTA REGIONAL)
-    if (this.canal.highwaySigns && this.canal.highwaySigns.bannerAlpha > 0 && this.canal.highwaySigns.activeSignIndex >= 0) {
+    // 7. LETRERO VIAL CUADRADO EN ESQUINA SUPERIOR DERECHA (TRÁNSITO MEDELLÍN)
+    if (this.canal.highwaySigns && this.canal.highwaySigns.cornerAlpha > 0 && this.canal.highwaySigns.activeSignIndex >= 0) {
       const hs = this.canal.highwaySigns;
       const activeSign = hs.signs[hs.activeSignIndex];
       const signImg = window.spriteManager.getImage(activeSign.spriteKey);
 
       if (signImg && signImg.complete) {
         ctx.save();
-        ctx.globalAlpha = hs.bannerAlpha;
+        ctx.globalAlpha = hs.cornerAlpha;
 
-        const bannerW = 340;
-        const bannerH = 76;
-        const bannerX = Math.round(this.vWidth / 2 - bannerW / 2);
-        // Descenso elástico desde arriba (Y = -85 hasta Y = 38)
-        const targetY = 38;
-        const startY = -bannerH - 8;
-        const bannerY = Math.round(startY + hs.bannerSlide * (targetY - startY));
+        const signW = 124;
+        const signH = 112;
+        // Posición compacta en la esquina superior derecha (no estorba la visión del juego)
+        const targetX = this.vWidth - signW - 14; // 640 - 124 - 14 = 502
+        const startX = this.vWidth + 10;
+        const currentX = Math.round(startX + hs.cornerSlide * (targetX - startX));
+        const currentY = 10;
 
-        // 1. Sombra pronunciada de profundidad arcade
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-        ctx.fillRect(bannerX + 4, bannerY + 4, bannerW, bannerH);
+        // Renderizado del letrero cuadrado oficial de tránsito de Medellín
+        ctx.drawImage(signImg, currentX, currentY, signW, signH);
 
-        // 2. Soporte metálico superior / abrazaderas de fijación vial
-        ctx.fillStyle = '#2c3e50';
-        ctx.fillRect(bannerX + 50, bannerY - 6, 12, 8);
-        ctx.fillRect(bannerX + bannerW - 62, bannerY - 6, 12, 8);
-        ctx.fillStyle = '#7f8c8d';
-        ctx.fillRect(bannerX + 52, bannerY - 6, 8, 3);
-        ctx.fillRect(bannerX + bannerW - 60, bannerY - 6, 8, 3);
-
-        // 3. Fondo de marco exterior reflectivo
-        const isEntryAlert = hs.activeSignIndex === 3;
-        const frameColor = isEntryAlert ? '#f1c40f' : '#ffffff';
-        ctx.fillStyle = frameColor;
-        ctx.fillRect(bannerX - 2, bannerY - 2, bannerW + 4, bannerH + 4);
-
-        // 4. Renderizado del cartel verde oficial de señalización vial
-        ctx.drawImage(signImg, bannerX, bannerY, bannerW, bannerH);
-
-        // 5. Luces ámbar de advertencia vial parpadeantes para el cartel de entrada
-        if (isEntryAlert) {
-          const blink = Math.floor(Date.now() / 150) % 2 === 0;
+        // Balizas intermitentes para el aviso de alerta de entrada al viaducto
+        if (hs.activeSignIndex === 3) {
+          const blink = Math.floor(Date.now() / 140) % 2 === 0;
           if (blink) {
             ctx.fillStyle = '#f39c12';
             ctx.beginPath();
-            ctx.arc(bannerX + 16, bannerY + bannerH / 2, 7, 0, Math.PI * 2);
-            ctx.arc(bannerX + bannerW - 16, bannerY + bannerH / 2, 7, 0, Math.PI * 2);
+            ctx.arc(currentX + 12, currentY + 12, 4, 0, Math.PI * 2);
+            ctx.arc(currentX + signW - 16, currentY + 12, 4, 0, Math.PI * 2);
             ctx.fill();
 
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(bannerX + 16, bannerY + bannerH / 2, 3, 0, Math.PI * 2);
-            ctx.arc(bannerX + bannerW - 16, bannerY + bannerH / 2, 3, 0, Math.PI * 2);
+            ctx.arc(currentX + 12, currentY + 12, 1.5, 0, Math.PI * 2);
+            ctx.arc(currentX + signW - 16, currentY + 12, 1.5, 0, Math.PI * 2);
             ctx.fill();
           }
         }
-
-        // 6. Resplandor sutil reflectivo retro
-        ctx.strokeStyle = isEntryAlert ? 'rgba(243, 156, 18, 0.85)' : 'rgba(46, 204, 113, 0.55)';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(bannerX - 2, bannerY - 2, bannerW + 4, bannerH + 4);
 
         ctx.restore();
       }
