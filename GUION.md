@@ -333,7 +333,7 @@ Música: "Medellín Drift 300 KM/H" (Eurobeat / D&B acelerado a 160 BPM con pito
 
 ---
 
-### Escena 3.4: El Sistema de Avisos de Tránsito del Soterrado (25.5s – 38.0s)
+### Escena 3.4: El Sistema de Avisos de Tránsito del Soterrado (25.5s – 41.5s)
 *(A partir de los 25.5 segundos de descenso, el velocímetro digital supera los $200\text{ km/h}$. La pendiente se hace más pronunciada y el rugido de los motores de la Autopista Sur se mezcla con los chillidos de la rata. En la esquina superior derecha de la pantalla comienzan a deslizarse los letreros verdes oficiales de la Secretaría de Movilidad de Medellín).*
 
 ```
@@ -356,7 +356,7 @@ Música: "Medellín Drift 300 KM/H" (Eurobeat / D&B acelerado a 160 BPM con pito
   - **Ícono:** Portal de túnel vial con flecha blanca.
 - **HUD FLOTANTE:** `🚦 SOTERRADO A 5 KM`
 
-#### 🚦 Aviso 2 (Segundo 28.2 | Velocidad: ~235 km/h)
+#### 🚦 Aviso 2 (Segundo 30.5 | 5.0s después | Velocidad: ~235 km/h)
 - **SFX:** Chime del Metro.
 - **GRÁFICO:** Señal cuadrada verde:
   - **Texto Superior:** `SOTERRADO A 3 KM`
@@ -364,7 +364,7 @@ Música: "Medellín Drift 300 KM/H" (Eurobeat / D&B acelerado a 160 BPM con pito
 - **HUD FLOTANTE:** `🚦 SOTERRADO A 3 KM`
 - **TENSIÓN:** La rata acelera su paso, acortando la distancia a menos de 50 píxeles de la espalda del jugador.
 
-#### 🚦 Aviso 3 (Segundo 30.8 | Velocidad: ~255 km/h)
+#### 🚦 Aviso 3 (Segundo 33.5 | 3.0s después | Velocidad: ~255 km/h)
 - **SFX:** Chime del Metro.
 - **GRÁFICO:** Señal cuadrada verde:
   - **Texto Superior:** `SOTERRADO A 2 KM`
@@ -372,14 +372,14 @@ Música: "Medellín Drift 300 KM/H" (Eurobeat / D&B acelerado a 160 BPM con pito
 - **HUD FLOTANTE:** `🚦 SOTERRADO A 2 KM`
 - **EFECTOS:** Estelas de viento rojo y blanco cruzan la pantalla.
 
-#### 🚦 Aviso 4 (Segundo 33.4 | Velocidad: ~280 km/h)
+#### 🚦 Aviso 4 (Segundo 36.1 | ~2.6s después | Velocidad: ~280 km/h)
 - **SFX:** Doble campanazo de alerta vial.
 - **GRÁFICO:** Señal cuadrada verde:
   - **Texto Superior:** `SOTERRADO A 1 KM`
   - **Subtexto:** `AUTOPISTA SUR`
 - **HUD FLOTANTE:** `🚦 SOTERRADO A 1 KM` (Color rojo de advertencia).
 
-#### 🚨 Aviso 5: Alerta Crítica (Segundo 36.0 | Velocidad: ~300 km/h)
+#### 🚨 Aviso 5: Alerta Crítica (Segundo 38.7 | ~2.6s después | Velocidad: ~300 km/h)
 - **SFX:** Sirena vial intermitente.
 - **GRÁFICO:** Señal cuadrada de emergencia con **balizas ámbar intermitentes** en las esquinas:
   - **Texto Superior:** `SOTERRADO A 50 M`
@@ -391,7 +391,7 @@ Música: "Medellín Drift 300 KM/H" (Eurobeat / D&B acelerado a 160 BPM con pito
 ### Escena 3.5: El Clímax — La Boca del Soterrado y el Choque Fatal de la Rata
 *(Diseño narrativo del desenlace final del Nivel 3).*
 
-- **SEGUNDO 38.5 – 40.0 (VELOCIDAD MÁXIMA: 300 KM/H):**
+- **SEGUNDO 41.5 – 43.5 (VELOCIDAD MÁXIMA: 300 KM/H):**
   - Al fondo de la rampa diagonal aparece de repente la gigantesca estructura de ingeniería civil paisa: **el Viaducto Soterrado de la Autopista Sur**.
   - El soterrado es un túnel de concreto reforzado de gálibo estándar ($4.5\text{ metros}$ de altura), con luces fluorescentes amarillas en el interior y gruesos pilares de concreto macizo en la entrada.
   - Para un ser humano en patines o zapatillas, el orificio es suficiente para entrar deslizándose a ras de piso. Para la Rata Mutante, que mide más de 6 metros de envergadura, el túnel es una trampa mortal sin escapatoria.

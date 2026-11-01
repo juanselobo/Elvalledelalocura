@@ -423,6 +423,13 @@ class MedellinGame {
     });
 
     window.addEventListener('click', (e) => {
+      if (this.currentStage === 3 && this.canal.climax && this.canal.climax.state === 'victory') {
+        if (e.target && e.target.tagName === 'BUTTON') return;
+        this.canal.active = false;
+        this.switchStage(1);
+        this.gameState = 'TITLE';
+        return;
+      }
       if (this.ratCutscene && this.ratCutscene.active) {
         // Evitar que el clic en botones de UI interfiera
         if (e.target && e.target.tagName === 'BUTTON') return;
@@ -457,6 +464,16 @@ class MedellinGame {
           return;
         }
       }
+      // Si el Nivel 3 finalizó en victoria en el soterrado, regresar al menú principal
+      if (this.currentStage === 3 && this.canal.climax && this.canal.climax.state === 'victory') {
+        if (k === ' ' || k === 'enter' || k === 'f' || k === 'c' || k === 'q' || k === 'e') {
+          this.canal.active = false;
+          this.switchStage(1);
+          this.gameState = 'TITLE';
+          return;
+        }
+      }
+
       // Si la cinemática está activa, cualquier tecla de acción avanza el panel
       if (this.ratCutscene && this.ratCutscene.active) {
         if (k === ' ' || k === 'enter' || k === 'f' || k === 'c' || k === 'q' || k === 'e') {
@@ -4136,7 +4153,7 @@ class MedellinGame {
         },
         {
           id: '3km',
-          triggerTime: 28.2,
+          triggerTime: 30.5, // 5 segundos después de 5 km
           spriteKey: 'sign_soterrado_3km',
           title: 'SOTERRADO A 3 KM',
           subtext: 'AUTOPISTA SUR',
@@ -4144,7 +4161,7 @@ class MedellinGame {
         },
         {
           id: '2km',
-          triggerTime: 30.8,
+          triggerTime: 33.5, // 3 segundos después de 3 km
           spriteKey: 'sign_soterrado_2km',
           title: 'SOTERRADO A 2 KM',
           subtext: 'AUTOPISTA SUR',
@@ -4152,7 +4169,7 @@ class MedellinGame {
         },
         {
           id: '1km',
-          triggerTime: 33.4,
+          triggerTime: 36.1, // ~2.6 segundos después de 2 km
           spriteKey: 'sign_soterrado_1km',
           title: 'SOTERRADO A 1 KM',
           subtext: 'AUTOPISTA SUR',
@@ -4160,7 +4177,7 @@ class MedellinGame {
         },
         {
           id: '50m',
-          triggerTime: 36.0,
+          triggerTime: 38.7, // ~2.6 segundos después de 1 km
           spriteKey: 'sign_soterrado_50m',
           title: 'SOTERRADO A 50 M',
           subtext: '¡ENTRADA INMINENTE!',
@@ -4172,6 +4189,20 @@ class MedellinGame {
       activeTimer: 0,
       cornerSlide: 0,
       cornerAlpha: 0
+    };
+
+    // Sistema del Clímax: Ingreso al Soterrado y Choque de la Rata Mutante
+    this.canal.climax = {
+      state: 'none',          // 'none', 'approaching', 'entered', 'crashed', 'victory'
+      triggerTime: 41.5,      // ~2.8s tras la señal de 50 m
+      portalX: 1150,          // Comienza a la derecha en la rampa
+      portalY: -174,          // Nivel de la rampa del canal
+      portalW: 280,
+      portalH: 240,
+      hitstopTimer: 0,
+      victoryTimer: 0,
+      ratCrashed: false,
+      debrisSpawned: false
     };
   }
 
@@ -4220,8 +4251,58 @@ class MedellinGame {
     }
   }
 
+  spawnSoterradoCrashDebris(originSlopeX, originSlopeY) {
+    if (!this.canal.rat) return;
+    const debrisKeys = [
+      'debris_concrete_slab',
+      'debris_concrete_chunk',
+      'debris_pipe_shard',
+      'debris_asphalt_rock',
+      'debris_sludge_splash'
+    ];
+    const worldPos = this.canalToWorldCoords(originSlopeX, originSlopeY);
+    for (let i = 0; i < 42; i++) {
+      const key = debrisKeys[i % debrisKeys.length];
+      const speed = 260 + Math.random() * 460;
+      const angle = (Math.random() * 0.8 - 0.4) * Math.PI;
+      this.canal.rat.debrisParticles.push({
+        spriteKey: key,
+        x: worldPos.x + (Math.random() * 40 - 20),
+        y: worldPos.y + (Math.random() * 40 - 20),
+        vx: -Math.cos(angle) * speed - 80, // Hacia la izquierda rebotando del muro
+        vy: -Math.abs(Math.sin(angle)) * speed - 90,
+        gravity: 620 + Math.random() * 180,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 22,
+        scale: 0.75 + Math.random() * 0.75,
+        life: 3.2 + Math.random() * 1.0,
+        bounces: 0
+      });
+    }
+
+    // Nubes densas de polvo de cemento y esquirlas
+    for (let k = 0; k < 35; k++) {
+      this.particles.push({
+        x: worldPos.x + (Math.random() - 0.5) * 60,
+        y: worldPos.y + (Math.random() - 0.5) * 60,
+        vx: (Math.random() - 0.75) * 320,
+        vy: -70 - Math.random() * 220,
+        size: 4 + Math.random() * 6,
+        color: Math.random() < 0.6 ? '#bdc3c7' : (Math.random() < 0.5 ? '#f1c40f' : '#7f8c8d'),
+        life: 1.4 + Math.random() * 0.8,
+        maxLife: 2.2
+      });
+    }
+  }
+
   updateCanal(dt) {
     if (!this.canal.active) return;
+
+    // Pausa dramática por hitstop en el choque del soterrado
+    if (this.canal.climax && this.canal.climax.hitstopTimer > 0) {
+      this.canal.climax.hitstopTimer -= dt;
+      return;
+    }
 
     // Decaimiento suave y rápido del temblor de impacto
     if (this.boss.screenShake > 0) {
@@ -4508,6 +4589,82 @@ class MedellinGame {
       }
     });
 
+    // Actualización del Clímax del Nivel 3: Entrada al Soterrado y Choque de la Rata Mutante
+    if (this.canal.climax) {
+      const cl = this.canal.climax;
+      if (cl.state === 'none' && this.canal.elapsedTime >= cl.triggerTime) {
+        cl.state = 'approaching';
+        const pCoords = this.canalToWorldCoords(p.slopeX || 350, 30);
+        this.addFloatingText(pCoords.x, pCoords.y - 30, "🚨 ¡¡VIADUCTO SOTERRADO A LA VISTA!!", "#f1c40f");
+        if (window.retroAudio && window.retroAudio.playTransitChime) {
+          window.retroAudio.playTransitChime();
+        }
+      }
+
+      if (cl.state === 'approaching') {
+        // El portal se aproxima a alta velocidad hacia la izquierda
+        cl.portalX -= (this.canal.speed * 2.25) * dt;
+
+        // Obligar al personaje a deslizarse a ras de suelo para entrar por el gálibo
+        if (cl.portalX < (p.slopeX || 350) + 260) {
+          p.action = 'slide';
+          p.grounded = true;
+          p.elevY = 0;
+          p.vy = 0;
+        }
+
+        // El héroe ingresa al viaducto soterrado a salvo
+        if (cl.portalX <= (p.slopeX || 350) + 70) {
+          cl.state = 'entered';
+          p.action = 'slide';
+          p.invulnerableTimer = 6.0;
+          const pCoords = this.canalToWorldCoords(p.slopeX || 350, 30);
+          this.addFloatingText(pCoords.x, pCoords.y - 25, "¡ENTRASTE AL SOTERRADO A SALVO! 🏎️💨", "#2ecc71");
+        }
+      } else if (cl.state === 'entered') {
+        cl.portalX -= (this.canal.speed * 2.25) * dt;
+
+        // La Rata Colosal alcanza el muro frontal del soterrado (no cabe por su gran tamaño)
+        if (cl.portalX <= 380) {
+          cl.state = 'crashed';
+          cl.hitstopTimer = 0.35;
+          this.boss.screenShake = 2.0;
+          cl.ratCrashed = true;
+
+          // Detener y noquear permanentemente a la rata contra el muro
+          if (this.canal.rat) {
+            this.canal.rat.state = 'crashed';
+            this.canal.rat.x = cl.portalX - 380;
+          }
+
+          // Sonidos masivos de colisión y rugido noqueado
+          if (window.retroAudio) {
+            if (window.retroAudio.playHeavyHit) window.retroAudio.playHeavyHit();
+            if (window.retroAudio.playThunderSlam) window.retroAudio.playThunderSlam();
+            if (window.retroAudio.playMonsterRoar) window.retroAudio.playMonsterRoar();
+          }
+
+          // Explosión de escombros de concreto y polvo
+          this.spawnSoterradoCrashDebris(cl.portalX + 40, cl.portalY + 120);
+
+          const crashWorld = this.canalToWorldCoords(cl.portalX + 40, cl.portalY + 120);
+          this.addFloatingText(crashWorld.x, crashWorld.y - 40, "💥 ¡¡BOOOOOOM!! ¡LA RATA SE ESTRELLÓ CONTRA EL SOTERRADO!", "#e74c3c");
+        }
+      } else if (cl.state === 'crashed') {
+        cl.victoryTimer += dt;
+        // Desaceleración suave del héroe deslizándose seguro dentro del túnel
+        this.canal.speed = Math.max(0, this.canal.speed - 150 * dt);
+
+        if (cl.victoryTimer >= 2.2) {
+          cl.state = 'victory';
+          this.canal.speed = 0;
+          if (window.retroAudio && window.retroAudio.playFanfare) {
+            window.retroAudio.playFanfare();
+          }
+        }
+      }
+    }
+
     // Actualización de los letreros viales cuadrados en esquina superior (Tránsito Medellín)
     if (this.canal.highwaySigns) {
       const hs = this.canal.highwaySigns;
@@ -4714,8 +4871,28 @@ class MedellinGame {
       }
     }
 
+    // 4.5. VIADUCTO SOTERRADO (PORTAL Y TÚNEL DE CONCRETO)
+    if (this.canal.climax && this.canal.climax.state !== 'none') {
+      const cl = this.canal.climax;
+      const portalImg = window.spriteManager.getImage('soterrado_tunnel_portal');
+      if (portalImg && portalImg.complete) {
+        ctx.drawImage(portalImg, Math.round(cl.portalX), Math.round(cl.portalY), cl.portalW, cl.portalH);
+      }
+    }
+
     // Dibujar al personaje con el motor nativo de sprites (misma escala, anclaje y arte pixel)
     window.spriteManager.drawSprite(ctx, pSprite, pDrawX, pDrawY, true, pAlpha, rotation);
+
+    // Si el jugador ya ingresó al túnel del soterrado, aplicar sombra y haz de luz de túnel
+    if (this.canal.climax && (this.canal.climax.state === 'entered' || this.canal.climax.state === 'crashed' || this.canal.climax.state === 'victory')) {
+      const cl = this.canal.climax;
+      if (pDrawX >= cl.portalX + 40) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(10, 15, 25, 0.45)';
+        ctx.fillRect(cl.portalX + 40, cl.portalY + 140, 260, 95);
+        ctx.restore();
+      }
+    }
 
     // (Pista de concreto del canal despejada para máxima legibilidad sin elementos móviles obstructivos)
 
@@ -4736,11 +4913,18 @@ class MedellinGame {
         currentRatKey = 'rata_colosal_snap';
       }
 
+      // Si la rata ya se estrelló contra el muro del soterrado, usar sprite noqueado y estrellas
+      const cl = this.canal.climax;
+      const isCrashed = cl && (cl.state === 'crashed' || cl.state === 'victory');
+      if (isCrashed) {
+        currentRatKey = 'rata_colosal_crashed';
+      }
+
       const ratImg = window.spriteManager.getImage(currentRatKey) || window.spriteManager.getImage('rata_colosal_maw');
       if (ratImg && ratImg.complete) {
         const ratCos = Math.cos(slopeAngle);
         const ratSin = Math.sin(slopeAngle);
-        const ratBob = Math.sin(this.canal.ratChompAnim * 3.2) * 5;
+        const ratBob = isCrashed ? 0 : Math.sin(this.canal.ratChompAnim * 3.2) * 5;
 
         const ratDrawX = Math.round(rat.x * ratCos);
         const ratDrawY = Math.round(rat.x * ratSin + ratBob + (rat.y || -55));
@@ -4748,6 +4932,27 @@ class MedellinGame {
         const ratDrawH = 425;
 
         ctx.drawImage(ratImg, ratDrawX, ratDrawY, ratDrawW, ratDrawH);
+
+        // Estrellas mareadas girando en órbita sobre la cabeza noqueada de la rata
+        if (isCrashed) {
+          const starTime = Date.now() / 140;
+          const starCenterX = ratDrawX + 270;
+          const starCenterY = ratDrawY + 90;
+          ctx.save();
+          ctx.fillStyle = '#f1c40f';
+          for (let st = 0; st < 4; st++) {
+            const stAngle = starTime + (st * Math.PI / 2);
+            const stX = starCenterX + Math.cos(stAngle) * 45;
+            const stY = starCenterY + Math.sin(stAngle) * 18;
+            ctx.beginPath();
+            ctx.arc(stX, stY, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
       }
     }
 
@@ -4836,6 +5041,105 @@ class MedellinGame {
         ctx.restore();
       }
     }
+
+    // 8. PANTALLA MODAL DE VICTORIA FINAL DEL NIVEL 3 (SOTERRADO SUPERADO)
+    if (this.canal.climax && this.canal.climax.state === 'victory') {
+      this.drawSoterradoVictoryModal(ctx);
+    }
+
+    ctx.restore();
+  }
+
+  drawSoterradoVictoryModal(ctx) {
+    const modalW = 520;
+    const modalH = 260;
+    const mx = (this.vWidth - modalW) / 2;
+    const my = (this.vHeight - modalH) / 2;
+
+    ctx.save();
+    // Oscurecimiento de fondo
+    ctx.fillStyle = 'rgba(6, 5, 14, 0.88)';
+    ctx.fillRect(0, 0, this.vWidth, this.vHeight);
+
+    // Caja principal
+    ctx.fillStyle = 'rgba(12, 10, 24, 0.98)';
+    ctx.beginPath();
+    ctx.roundRect(mx, my, modalW, modalH, 12);
+    ctx.fill();
+    ctx.strokeStyle = '#f1c40f';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Ribete interno
+    ctx.strokeStyle = 'rgba(46, 204, 113, 0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(mx + 6, my + 6, modalW - 12, modalH - 12);
+
+    // Título y Trofeo
+    ctx.fillStyle = '#f1c40f';
+    ctx.font = '900 12px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText("★ ★ ★ ¡¡ETAPA 3 SUPERADA!! ★ ★ ★", this.vWidth / 2, my + 26);
+
+    ctx.fillStyle = '#2ecc71';
+    ctx.font = '900 16px "Impact", "Arial Black", monospace';
+    ctx.fillText("¡¡VICTORIA EN EL SOTERRADO DE MEDELLÍN!! 🏆", this.vWidth / 2, my + 50);
+
+    // Cuadro de Diálogo del Héroe
+    const activeHero = this.roster.find(c => c.id === this.selectedCharId) || this.roster[0];
+    const heroQuotes = {
+      'juancho': '"¡Esa rata no cupo por el gálibo del viaducto y se dio tremendo totazo contra el concreto! ¡Aprenda a respetar a la gente de la Villa!"',
+      'lina': '"¡A 300 por hora nadie me gana en estos patines! ¡La rata se quedó con las ganas y un chichón gigante!"',
+      'gloria': '"¡Ave María purísima, tremendo totazo se pegó ese animal! ¡Por fin quedó esa plaga aplastada contra el viaducto!"',
+      'fuisioso': '"¡Todo bien, todo bonito! ¡Ni la rata más gigante puede con la furia fuisiosa de Medellín!"',
+      'fico': '"¡Aquí estamos poniendo orden! Cero tolerancia con las ratas gigantes en el soterrado."'
+    };
+    const quote = heroQuotes[activeHero.id] || heroQuotes['juancho'];
+
+    ctx.fillStyle = 'rgba(25, 20, 42, 0.9)';
+    ctx.fillRect(mx + 18, my + 66, modalW - 36, 54);
+    ctx.strokeStyle = '#3498db';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(mx + 18, my + 66, modalW - 36, 54);
+
+    ctx.fillStyle = '#f1c40f';
+    ctx.font = '900 9px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(activeHero.name + ":", mx + 28, my + 82);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 8px monospace';
+    ctx.fillText(quote, mx + 28, my + 98, modalW - 56);
+
+    // Tarjeta de Telemetría y Estadísticas
+    const statsY = my + 130;
+    ctx.fillStyle = 'rgba(18, 15, 30, 0.9)';
+    ctx.fillRect(mx + 18, statsY, modalW - 36, 62);
+    ctx.strokeStyle = '#2ecc71';
+    ctx.strokeRect(mx + 18, statsY, modalW - 36, 62);
+
+    ctx.font = '900 9px monospace';
+    ctx.fillStyle = '#f1c40f';
+    ctx.textAlign = 'left';
+    ctx.fillText("🏁 DISTANCIA DESCENDIDA: " + Math.floor(this.canal.distance / 10) + " METROS", mx + 32, statsY + 20);
+    ctx.fillText("⚡ VELOCIDAD MÁXIMA: 300 KM/H (MÁXIMA VELOCIDAD)", mx + 32, statsY + 38);
+
+    ctx.fillStyle = '#2ecc71';
+    ctx.fillText("🏆 PUNTUACIÓN TOTAL: " + this.score + " PTS", mx + 280, statsY + 20);
+    ctx.fillText("❤️ SALUD: " + this.player.hp + " / " + this.player.maxHp + " HP (A SALVO)", mx + 280, statsY + 38);
+
+    // Botón interactivo palpitante
+    const pulse = Math.sin(Date.now() / 110) * 0.3 + 0.7;
+    ctx.fillStyle = `rgba(46, 204, 113, ${pulse})`;
+    ctx.fillRect(this.vWidth / 2 - 180, my + 204, 360, 36);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(this.vWidth / 2 - 180, my + 204, 360, 36);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 11px "Impact", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText("▶ [ ESPACIO / ENTER / CLICK ] VOLVER AL MENÚ PRINCIPAL ◀", this.vWidth / 2, my + 227);
 
     ctx.restore();
   }

@@ -238,6 +238,10 @@ class SpriteManager {
       'sign_soterrado_1km': 'assets/sign_soterrado_1km.png',
       'sign_soterrado_50m': 'assets/sign_soterrado_50m.png',
 
+      // Viaducto Soterrado y Choque Final de la Rata Colosal
+      'soterrado_tunnel_portal': 'assets/soterrado_tunnel_portal.png',
+      'rata_colosal_crashed': 'assets/rata_colosal_crashed.png',
+
       // Obstáculos Urbanos de la Canalización (Intactos y Destruidos/Hit)
       'obs_gamin_dormido': 'assets/obs_gamin_dormido.png',
       'obs_gamin_dormido_hit': 'assets/obs_gamin_dormido_hit.png',
@@ -271,7 +275,7 @@ class SpriteManager {
 
     const keys = Object.keys(assetList);
     this.totalImages = keys.length;
-    const assetVersion = 'v1.5.1';
+    const assetVersion = 'v1.6.0';
 
     keys.forEach(key => {
       const img = new Image();
