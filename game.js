@@ -5171,13 +5171,24 @@ class MedellinGame {
     if (!this.canal.climax || this.canal.climax.state !== 'flooded_cutscene') return;
     const cl = this.canal.climax;
     cl.cutsceneStep = (cl.cutsceneStep || 1) + 1;
-    if (window.retroAudio && window.retroAudio.playTransitChime) {
-      window.retroAudio.playTransitChime();
-    }
-    if (cl.cutsceneStep > 2) {
+
+    if (cl.cutsceneStep === 2) {
+      if (window.retroAudio && window.retroAudio.playCarHorn) {
+        window.retroAudio.playCarHorn();
+      }
+    } else if (cl.cutsceneStep === 3) {
+      if (window.retroAudio && window.retroAudio.playWaterSplash) {
+        window.retroAudio.playWaterSplash();
+      }
+    } else if (cl.cutsceneStep > 3) {
       this.canal.active = false;
       this.switchStage(1);
       this.gameState = 'TITLE';
+      return;
+    }
+
+    if (window.retroAudio && window.retroAudio.playTransitChime) {
+      window.retroAudio.playTransitChime();
     }
   }
 
@@ -5188,117 +5199,44 @@ class MedellinGame {
 
     ctx.save();
 
-    // 1. Render Master Flooded Soterrado Artwork
-    const cutImg = window.spriteManager.getImage('cutscene_soterrado_inundado');
-    if (cutImg && cutImg.complete) {
-      ctx.drawImage(cutImg, 0, 0, this.vWidth, this.vHeight);
+    // Selección de la viñeta de cómic según el paso solicitado por el usuario:
+    // 1. Una desde afuera del soterrado
+    // 2. Otra que diga "MIENTRAS TANTO..."
+    // 3. Otra del soterrado ya adentro, así inundado
+    let spriteKey = 'comic_soterrado_1_exterior';
+    if (step === 2) {
+      spriteKey = 'comic_soterrado_2_mientras_tanto';
+    } else if (step >= 3) {
+      spriteKey = 'comic_soterrado_3_inundado';
+    }
+
+    const img = window.spriteManager.getImage(spriteKey);
+    if (img && img.complete) {
+      ctx.drawImage(img, 0, 0, this.vWidth, this.vHeight);
     } else {
-      ctx.fillStyle = '#1a1424';
+      ctx.fillStyle = '#110e20';
       ctx.fillRect(0, 0, this.vWidth, this.vHeight);
       ctx.fillStyle = '#f1c40f';
       ctx.font = '900 16px "Impact", monospace';
       ctx.textAlign = 'center';
-      ctx.fillText("SOTERRADO INUNDADO DE MEDELLÍN", this.vWidth / 2, this.vHeight / 2);
+      ctx.fillText("TRANSICIÓN AL SOTERRADO (CARGANDO CÓMIC...)", this.vWidth / 2, this.vHeight / 2);
     }
 
-    // 2. Animated water ripples on top of the image
-    const now = Date.now();
-    ctx.fillStyle = 'rgba(241, 196, 15, 0.12)';
-    for (let i = 0; i < 5; i++) {
-      const rx = 160 + Math.sin(now / 350 + i * 1.5) * 50;
-      const ry = 190 + i * 18;
-      ctx.fillRect(rx, ry, 70 + Math.sin(now / 220 + i) * 25, 2);
-    }
-    // Animated hazard blinker flash on white car
-    const hazardAlpha = (Math.sin(now / 150) > 0.1) ? 0.8 : 0.0;
-    if (hazardAlpha > 0) {
-      ctx.fillStyle = `rgba(243, 156, 18, ${hazardAlpha})`;
-      ctx.beginPath();
-      ctx.arc(418, 192, 5, 0, Math.PI * 2);
-      ctx.arc(488, 192, 5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // 3. Step 2: Overlay Level 4 Subway Surfers Mission Briefing
-    if (step === 2) {
-      ctx.fillStyle = 'rgba(8, 6, 18, 0.88)';
-      ctx.fillRect(0, 0, this.vWidth, this.vHeight);
-
-      const bw = 540;
-      const bh = 290;
-      const bx = (this.vWidth - bw) / 2;
-      const by = (this.vHeight - bh) / 2;
-
-      // Card frame
-      ctx.fillStyle = 'rgba(14, 12, 28, 0.98)';
-      ctx.beginPath();
-      ctx.roundRect(bx, by, bw, bh, 10);
-      ctx.fill();
-      ctx.strokeStyle = '#2ecc71';
-      ctx.lineWidth = 3;
-      ctx.stroke();
-
-      // Inner border
-      ctx.strokeStyle = '#f1c40f';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(bx + 5, by + 5, bw - 10, bh - 10);
-
-      // Header
-      ctx.fillStyle = '#f1c40f';
-      ctx.font = '900 12px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText("★ ★ ★ PRÓXIMO EPISODIO: NIVEL 4 ★ ★ ★", this.vWidth / 2, by + 26);
-
-      ctx.fillStyle = '#2ecc71';
-      ctx.font = '900 18px "Impact", "Arial Black", monospace';
-      ctx.fillText("LA GRAN INUNDACIÓN DEL SOTERRADO", this.vWidth / 2, by + 50);
-
-      ctx.fillStyle = '#3498db';
-      ctx.font = 'bold 11px monospace';
-      ctx.fillText("MODO SUBWAY SURFERS PAISA (PARKOUR SOBRE VEHÍCULOS)", this.vWidth / 2, by + 68);
-
-      // Mission summary box
-      ctx.fillStyle = 'rgba(22, 20, 38, 0.95)';
-      ctx.fillRect(bx + 18, by + 82, bw - 36, 138);
-      ctx.strokeStyle = '#555';
-      ctx.strokeRect(bx + 18, by + 82, bw - 36, 138);
-
-      ctx.textAlign = 'left';
-      ctx.font = 'bold 9.5px monospace';
-      ctx.fillStyle = '#ffffff';
-
-      const bulletPoints = [
-        "🌊 EL SOTERRADO ESTÁ TOTALMENTE SUMERGIDO EN AGUA TURBIA.",
-        "🚕 SALTA ENTRE LOS TECHOS DE TAXIS, SEDANES Y BUSES COOMETROPOL.",
-        "👵 RESCATA A LOS PAISAS ATRAPADOS: DOÑA GLORIA, TAXISTAS Y RAPPIS (+500 PTS).",
-        "⚠️ ESQUIVA TUBERÍAS BAJAS DE VENTILACIÓN DESLIZÁNDOTE (TECLA ABAJO / C).",
-        "🚫 CAER AL AGUA TE RALENTIZA Y PROVOCA DAÑO POR AHOGAMIENTO.",
-        "🏁 ALCANZA LA SALIDA DE SAN JUAN PARA COMPLETAR LA HAZAÑA."
-      ];
-
-      bulletPoints.forEach((bp, idx) => {
-        if (bp.includes("🌊")) ctx.fillStyle = '#3498db';
-        else if (bp.includes("🚕")) ctx.fillStyle = '#f1c40f';
-        else if (bp.includes("👵")) ctx.fillStyle = '#2ecc71';
-        else if (bp.includes("⚠️")) ctx.fillStyle = '#e67e22';
-        else if (bp.includes("🚫")) ctx.fillStyle = '#e74c3c';
-        else ctx.fillStyle = '#ffffff';
-
-        ctx.fillText(bp, bx + 28, by + 104 + idx * 19);
-      });
-
-      // Bottom confirmation button
-      const pulse = Math.sin(Date.now() / 120) * 0.3 + 0.7;
-      ctx.fillStyle = `rgba(241, 196, 15, ${pulse})`;
-      ctx.fillRect(this.vWidth / 2 - 200, by + 236, 400, 36);
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(this.vWidth / 2 - 200, by + 236, 400, 36);
-
-      ctx.fillStyle = '#0a0a14';
-      ctx.font = '900 12px "Impact", monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText("▶  [ ESPACIO / ENTER / CLICK ] VOLVER AL MENÚ PRINCIPAL  ◀", this.vWidth / 2, by + 259);
+    // Indicador superior de progreso en el cómic (1 de 3, 2 de 3, 3 de 3)
+    const totalPanels = 3;
+    const barW = 32;
+    const barGap = 10;
+    const startX = (this.vWidth - (totalPanels * barW + (totalPanels - 1) * barGap)) / 2;
+    for (let p = 0; p < totalPanels; p++) {
+      const bx = startX + p * (barW + barGap);
+      const isCurrent = (p + 1 === step);
+      ctx.fillStyle = isCurrent ? '#f1c40f' : 'rgba(255, 255, 255, 0.35)';
+      ctx.fillRect(bx, 10, barW, 4);
+      if (isCurrent) {
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx, 10, barW, 4);
+      }
     }
 
     ctx.restore();
