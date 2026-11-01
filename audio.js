@@ -901,6 +901,40 @@ class RetroAudio {
     osc1.stop(now + 0.9);
     osc2.stop(now + 0.9);
   }
+
+  // Chime de anuncio de tránsito vial / Metro de Medellín
+  playTransitChime() {
+    if (this.muted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    // Secuencia de dos tonos armoniosos y resonantes de señal vial / metro
+    const chords = [
+      { freq: 659.25, time: 0.0, dur: 0.38, gain: 0.22 },
+      { freq: 880.00, time: 0.20, dur: 0.48, gain: 0.26 }
+    ];
+    chords.forEach(c => {
+      const osc = this.ctx.createOscillator();
+      const oscHarmonic = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      oscHarmonic.type = 'triangle';
+      osc.frequency.setValueAtTime(c.freq, now + c.time);
+      oscHarmonic.frequency.setValueAtTime(c.freq * 2, now + c.time);
+
+      gain.gain.setValueAtTime(0.001, now + c.time);
+      gain.gain.linearRampToValueAtTime(c.gain, now + c.time + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + c.time + c.dur);
+
+      osc.connect(gain);
+      oscHarmonic.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now + c.time);
+      oscHarmonic.start(now + c.time);
+      osc.stop(now + c.time + c.dur);
+      oscHarmonic.stop(now + c.time + c.dur);
+    });
+  }
 }
 
 window.retroAudio = new RetroAudio();

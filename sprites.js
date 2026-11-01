@@ -275,6 +275,10 @@ class SpriteManager {
       'debris_pipe_shard': 'assets/debris_pipe_shard.png',
       'debris_asphalt_rock': 'assets/debris_asphalt_rock.png',
       'debris_sludge_splash': 'assets/debris_sludge_splash.png',
+      'sign_viaducto_5km': 'assets/sign_viaducto_5km.png',
+      'sign_viaducto_2km': 'assets/sign_viaducto_2km.png',
+      'sign_viaducto_1km': 'assets/sign_viaducto_1km.png',
+      'sign_viaducto_entry': 'assets/sign_viaducto_entry.png',
       'obs_gamin_dormido': 'assets/obs_gamin_dormido.png',
       'obs_prepago': 'assets/obs_prepago.png',
       'obs_taxista_cruceta': 'assets/obs_taxista_cruceta.png',
@@ -305,7 +309,7 @@ class SpriteManager {
 
     const keys = Object.keys(assetList);
     this.totalImages = keys.length;
-    const assetVersion = 'v1.4.6';
+    const assetVersion = 'v1.4.7';
 
     keys.forEach(key => {
       const img = new Image();
