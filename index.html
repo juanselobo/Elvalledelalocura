@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Aventura en Medellín: La Villa del Aburrá - Game Boy Color Edition</title>
-  <link rel="stylesheet" href="style.css?v=1793518500">
+  <link rel="stylesheet" href="style.css?v=1793519000">
 </head>
 <body>
 
@@ -15,6 +15,7 @@
       <button class="gbc-top-btn gbc-stage-btn active" id="btnStage1">NIVEL 1</button>
       <button class="gbc-top-btn gbc-stage-btn" id="btnStage2">NIVEL 2</button>
       <button class="gbc-top-btn gbc-stage-btn" id="btnStage3">NIVEL 3</button>
+      <button class="gbc-top-btn gbc-stage-btn" id="btnStage4" title="Nivel 4: Soterrado Inundado">NIVEL 4</button>
     </div>
     <button class="gbc-top-btn" id="btnFullscreen" title="Pantalla Completa">⛶ PANTALLA</button>
   </div>
@@ -124,16 +125,16 @@
         <span class="key-badge">Shift</span> Correr
       </div>
       <div class="control-item">
-        <span class="key-badge">1 / 2 / 3</span> Cambiar Nivel | <span class="key-badge">M</span> Música
+        <span class="key-badge">1 / 2 / 3 / 4</span> Cambiar Nivel | <span class="key-badge">M</span> Música
       </div>
     </div>
 
   </div>
 
   <!-- Scripts del juego -->
-  <script src="audio.js?v=1793518500"></script>
-  <script src="sprites.js?v=1793518500"></script>
-  <script src="game.js?v=1793518500"></script>
+  <script src="audio.js?v=1793519000"></script>
+  <script src="sprites.js?v=1793519000"></script>
+  <script src="game.js?v=1793519000"></script>
 
   <script>
     // Selector de niveles interactivo con estado activo
@@ -162,6 +163,13 @@
       if (window.medellinGame) {
         window.medellinGame.switchStage(3);
         updateActiveStageButton(3);
+      }
+    });
+
+    document.getElementById('btnStage4').addEventListener('click', function() {
+      if (window.medellinGame) {
+        window.medellinGame.switchStage(4);
+        updateActiveStageButton(4);
       }
     });
 

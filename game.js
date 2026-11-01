@@ -426,18 +426,21 @@ class MedellinGame {
       if (this.currentStage === 3 && this.canal.climax) {
         if (this.canal.climax.state === 'victory') {
           if (e.target && e.target.tagName === 'BUTTON') return;
-          this.canal.climax.state = 'flooded_cutscene';
-          this.canal.climax.cutsceneStep = 1;
-          if (window.retroAudio) {
-            if (window.retroAudio.playWaterSplash) window.retroAudio.playWaterSplash();
-            if (window.retroAudio.playCarHorn) window.retroAudio.playCarHorn();
-          }
+          this.switchStage(4);
           return;
         } else if (this.canal.climax.state === 'flooded_cutscene') {
           if (e.target && e.target.tagName === 'BUTTON') return;
           this.advanceFloodedCutscene();
           return;
         }
+      }
+      if (this.currentStage === 4) {
+        if (e.target && e.target.tagName === 'BUTTON') return;
+        const rect = this.canvas.getBoundingClientRect();
+        const clickX = (e.clientX - rect.left) * (this.vWidth / rect.width);
+        const clickY = (e.clientY - rect.top) * (this.vHeight / rect.height);
+        this.handleClickStage4(clickX, clickY);
+        return;
       }
       if (this.ratCutscene && this.ratCutscene.active) {
         // Evitar que el clic en botones de UI interfiera
@@ -478,12 +481,7 @@ class MedellinGame {
       if (this.currentStage === 3 && this.canal.climax) {
         if (this.canal.climax.state === 'victory') {
           if (k === ' ' || k === 'enter' || k === 'f' || k === 'c' || k === 'q' || k === 'e') {
-            this.canal.climax.state = 'flooded_cutscene';
-            this.canal.climax.cutsceneStep = 1;
-            if (window.retroAudio) {
-              if (window.retroAudio.playWaterSplash) window.retroAudio.playWaterSplash();
-              if (window.retroAudio.playCarHorn) window.retroAudio.playCarHorn();
-            }
+            this.switchStage(4);
             return;
           }
         } else if (this.canal.climax.state === 'flooded_cutscene') {
@@ -491,6 +489,16 @@ class MedellinGame {
             this.advanceFloodedCutscene();
             return;
           }
+        }
+      }
+      if (this.currentStage === 4) {
+        if (k === ' ' || k === 'enter' || k === 'f' || k === 'c' || k === 'arrowright' || k === 'd') {
+          this.advanceStage4Comic(1);
+          return;
+        }
+        if (k === 'arrowleft' || k === 'a') {
+          this.advanceStage4Comic(-1);
+          return;
         }
       }
 
@@ -559,7 +567,8 @@ class MedellinGame {
       if (k === '1') this.switchStage(1);
       if (k === '2') this.switchStage(2);
       if (k === '3') this.switchStage(3);
-      if (k === '4') this.startRatCutscene();
+      if (k === '4') this.switchStage(4);
+      if (k === '5') this.startRatCutscene();
       if (k === 'm') {
         const playing = window.retroAudio.toggleBgm();
         this.addFloatingText(this.player.x, this.player.z - 100, playing ? "MÚSICA: ON" : "MÚSICA: OFF", "#f1c40f");
@@ -622,11 +631,13 @@ class MedellinGame {
     // D-Pad Game Boy Color con soporte para selección de personaje
     bindBtn('btnLeft', () => {
       if (this.gameState === 'CHAR_SELECT') { this.selectPrevChar(); return; }
+      if (this.currentStage === 4) { this.advanceStage4Comic(-1); return; }
       this.keys.left = true;
     }, () => { this.keys.left = false; this.player.isDashing = false; });
 
     bindBtn('btnRight', () => {
       if (this.gameState === 'CHAR_SELECT') { this.selectNextChar(); return; }
+      if (this.currentStage === 4) { this.advanceStage4Comic(1); return; }
       this.keys.right = true;
     }, () => { this.keys.right = false; this.player.isDashing = false; });
 
@@ -637,6 +648,7 @@ class MedellinGame {
     bindBtn('btnJump', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
+      if (this.currentStage === 4) { this.advanceStage4Comic(1); return; }
       this.triggerJump();
     });
     bindBtn('btnPunch', () => {
@@ -1166,6 +1178,7 @@ class MedellinGame {
     let banner = "★ NIVEL 1: LA VILLA DEL ABURRÁ ★";
     if (stageNum === 2) banner = "★ NIVEL 2: MIRADOR DE LA LADERA ★";
     else if (stageNum === 3) banner = "★ NIVEL 3: DESCENSO POR LA CANALIZACIÓN ★";
+    else if (stageNum === 4) banner = "★ NIVEL 4: EL SOTERRADO INUNDADO ★";
     this.addFloatingText(this.player.x, this.player.z - 140, banner, "#f1c40f");
 
     this.enemies = [];
@@ -1182,7 +1195,9 @@ class MedellinGame {
     this.boss.defeated = false;
     this.cutscene.active = false;
     if (this.ratCutscene) this.ratCutscene.active = false;
-    if (stageNum === 3) {
+    if (stageNum === 4) {
+      this.initStage4Soterrado();
+    } else if (stageNum === 3) {
       this.initCanalDescent();
       if (window.retroAudio && window.retroAudio.startCanalChaseBgm) window.retroAudio.startCanalChaseBgm();
     } else {
@@ -1466,6 +1481,15 @@ class MedellinGame {
       this.ratCutscene.flash = Math.max(0, this.ratCutscene.flash - dt * 2.5);
       if (this.ratCutscene.step <= 4 && this.ratCutscene.stepTimer >= this.ratCutscene.maxStepTimer) {
         this.advanceRatCutscene();
+      }
+      return;
+    }
+
+    // Si estamos en el Nivel 4 (Soterrado Inundado - Transición Cómic e Ilustraciones)
+    if (this.currentStage === 4) {
+      this.pollGamepads();
+      if (this.stage4) {
+        this.stage4.timer = (this.stage4.timer || 0) + dt;
       }
       return;
     }
@@ -2739,6 +2763,11 @@ class MedellinGame {
 
     if (this.gameState === 'CHAR_SELECT') {
       this.drawCharSelectScreen(ctx);
+      return;
+    }
+
+    if (this.currentStage === 4) {
+      this.drawStage4Soterrado(ctx);
       return;
     }
 
@@ -5166,6 +5195,176 @@ class MedellinGame {
     ctx.restore();
   }
 
+
+    initStage4Soterrado() {
+    this.stage4 = {
+      comicStep: 1,
+      totalSteps: 3,
+      timer: 0
+    };
+    if (this.canal) this.canal.active = false;
+    if (window.retroAudio) {
+      if (window.retroAudio.stopCutsceneBgm) window.retroAudio.stopCutsceneBgm();
+      if (window.retroAudio.playWaterSplash) window.retroAudio.playWaterSplash();
+    }
+  }
+
+  advanceStage4Comic(dir = 1) {
+    if (!this.stage4) this.stage4 = { comicStep: 1, totalSteps: 3, timer: 0 };
+    let step = (this.stage4.comicStep || 1) + dir;
+    if (step > 3) step = 1;
+    if (step < 1) step = 3;
+    this.stage4.comicStep = step;
+
+    if (window.retroAudio) {
+      if (step === 1 && window.retroAudio.playTransitChime) window.retroAudio.playTransitChime();
+      else if (step === 2 && window.retroAudio.playCarHorn) window.retroAudio.playCarHorn();
+      else if (step === 3 && window.retroAudio.playWaterSplash) window.retroAudio.playWaterSplash();
+    }
+  }
+
+  handleClickStage4(clickX, clickY) {
+    if (!this.stage4) this.stage4 = { comicStep: 1, totalSteps: 3, timer: 0 };
+
+    // 1. Click en pestañas superiores (Y entre 6 y 34)
+    if (this.stage4._tabs && clickY >= 6 && clickY <= 34) {
+      for (const tab of this.stage4._tabs) {
+        if (clickX >= tab.x && clickX <= tab.x + tab.w) {
+          this.stage4.comicStep = tab.id;
+          if (window.retroAudio) {
+            if (tab.id === 1 && window.retroAudio.playTransitChime) window.retroAudio.playTransitChime();
+            else if (tab.id === 2 && window.retroAudio.playCarHorn) window.retroAudio.playCarHorn();
+            else if (tab.id === 3 && window.retroAudio.playWaterSplash) window.retroAudio.playWaterSplash();
+          }
+          return;
+        }
+      }
+    }
+
+    // 2. Click en barra inferior: Anterior o Siguiente
+    if (clickY >= this.vHeight - 28) {
+      if (clickX <= 130) {
+        this.advanceStage4Comic(-1);
+        return;
+      } else if (clickX >= this.vWidth - 130) {
+        this.advanceStage4Comic(1);
+        return;
+      }
+    }
+
+    // 3. Clic general en cualquier parte del canvas: avanza a la siguiente viñeta
+    this.advanceStage4Comic(1);
+  }
+
+  drawStage4Soterrado(ctx) {
+    if (!this.stage4) {
+      this.initStage4Soterrado();
+    }
+    const step = this.stage4.comicStep || 1;
+
+    ctx.save();
+
+    // 1. DIBUJAR VIÑETA ACTUAL
+    let spriteKey = 'comic_soterrado_1_exterior';
+    if (step === 2) {
+      spriteKey = 'comic_soterrado_2_mientras_tanto';
+    } else if (step >= 3) {
+      spriteKey = 'comic_soterrado_3_inundado';
+    }
+
+    const img = window.spriteManager.getImage(spriteKey);
+    if (img && img.complete) {
+      ctx.drawImage(img, 0, 0, this.vWidth, this.vHeight);
+    } else {
+      ctx.fillStyle = '#110e20';
+      ctx.fillRect(0, 0, this.vWidth, this.vHeight);
+      ctx.fillStyle = '#f1c40f';
+      ctx.font = '900 16px "Impact", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText("NIVEL 4: SOTERRADO INUNDADO (CARGANDO ILUSTRACIÓN...)", this.vWidth / 2, this.vHeight / 2);
+    }
+
+    // 2. PESTAÑAS SUPERIORES INTERACTIVAS (TABS PARA SELECCIONAR VIÑETAS DIRECTAMENTE)
+    const tabs = [
+      { id: 1, label: "1. AFUERA (PARQUES)", w: 140 },
+      { id: 2, label: "2. MIENTRAS TANTO...", w: 160 },
+      { id: 3, label: "3. SOTERRADO INUNDADO", w: 165 }
+    ];
+    const totalTabW = tabs.reduce((acc, t) => acc + t.w, 0) + (tabs.length - 1) * 8;
+    let curX = (this.vWidth - totalTabW) / 2;
+    const tabY = 8;
+    const tabH = 22;
+
+    tabs.forEach(tab => {
+      const isCur = (tab.id === step);
+      // Sombra
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.fillRect(curX + 2, tabY + 2, tab.w, tabH);
+
+      // Fondo
+      ctx.fillStyle = isCur ? '#f1c40f' : 'rgba(18, 14, 32, 0.88)';
+      ctx.fillRect(curX, tabY, tab.w, tabH);
+
+      // Borde
+      ctx.strokeStyle = isCur ? '#ffffff' : 'rgba(255, 255, 255, 0.35)';
+      ctx.lineWidth = isCur ? 2 : 1;
+      ctx.strokeRect(curX, tabY, tab.w, tabH);
+
+      // Texto
+      ctx.fillStyle = isCur ? '#0a0a0a' : '#f5f6fa';
+      ctx.font = '900 9px "Impact", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(tab.label, curX + tab.w / 2, tabY + tabH / 2 + 1);
+
+      tab.x = curX;
+      curX += tab.w + 8;
+    });
+
+    this.stage4._tabs = tabs;
+    this.stage4._tabY = tabY;
+    this.stage4._tabH = tabH;
+
+    // 3. BARRA INFERIOR DE NAVEGACIÓN Y REVISIÓN
+    const barY = this.vHeight - 26;
+    ctx.fillStyle = 'rgba(8, 6, 16, 0.88)';
+    ctx.fillRect(0, barY, this.vWidth, 26);
+    ctx.strokeStyle = '#f1c40f';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0, barY, this.vWidth, 26);
+
+    // Botón Anterior (Izquierda)
+    ctx.fillStyle = (step > 1) ? '#e67e22' : 'rgba(120, 120, 120, 0.45)';
+    ctx.fillRect(8, barY + 3, 110, 20);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(8, barY + 3, 110, 20);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 9px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText("◀ [A] ANTERIOR", 63, barY + 13);
+
+    // Centro: Indicador / Ayuda
+    ctx.fillStyle = '#f1c40f';
+    ctx.font = '900 9px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText("▶ [ESPACIO / ENTER / CLIC] AVANZAR", this.vWidth / 2, barY + 13);
+
+    // Botón Siguiente / Repetir (Derecha)
+    const isLast = (step === 3);
+    ctx.fillStyle = isLast ? '#27ae60' : '#3498db';
+    ctx.fillRect(this.vWidth - 118, barY + 3, 110, 20);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(this.vWidth - 118, barY + 3, 110, 20);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 9px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(isLast ? "🔄 [D] REPETIR" : "[D] SIGUIENTE ▶", this.vWidth - 63, barY + 13);
+
+    ctx.restore();
+  }
 
   advanceFloodedCutscene() {
     if (!this.canal.climax || this.canal.climax.state !== 'flooded_cutscene') return;
