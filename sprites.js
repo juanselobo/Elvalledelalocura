@@ -324,42 +324,47 @@ class SpriteManager {
     return this.images[key] || null;
   }
 
-  // Dibuja un sprite con soporte para orientación, rotación, squash & stretch, sub-pixel bobbing y anclaje a ras de suelo
+  // Dibuja un sprite con soporte para orientación, rotación, squash & stretch, sub-pixel bobbing y anclaje a ras de suelo (Protegido contra fallos)
   drawSprite(ctx, key, x, y, facingRight = true, alpha = 1.0, rotation = 0, scaleX = 1.0, scaleY = 1.0, offsetX = 0, offsetY = 0) {
     const img = this.images[key];
     if (!img || !img.complete || img.naturalWidth === 0) return;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
 
     ctx.save();
-    ctx.imageSmoothingEnabled = false;
-    if (alpha < 1.0) ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+    try {
+      ctx.imageSmoothingEnabled = false;
+      const safeAlpha = Number.isFinite(alpha) ? Math.max(0, Math.min(1, alpha)) : 1.0;
+      if (safeAlpha < 1.0) ctx.globalAlpha = safeAlpha;
 
-    const w = img.naturalWidth;
-    const h = img.naturalHeight;
+      const w = img.naturalWidth;
+      const h = img.naturalHeight;
 
-    // 1. Posicionar en el anclaje a ras de suelo (pies del personaje)
-    ctx.translate(Math.floor(x + offsetX), Math.floor(y + offsetY));
+      const tx = Math.floor(x + (Number.isFinite(offsetX) ? offsetX : 0));
+      const ty = Math.floor(y + (Number.isFinite(offsetY) ? offsetY : 0));
+      ctx.translate(tx, ty);
 
-    // 2. Orientación horizontal (espejado para mirar a la izquierda)
-    if (!facingRight) {
-      ctx.scale(-1, 1);
+      if (!facingRight) {
+        ctx.scale(-1, 1);
+      }
+
+      if (Number.isFinite(rotation) && rotation !== 0) {
+        ctx.translate(0, -Math.floor(h / 2));
+        ctx.rotate(rotation);
+        ctx.translate(0, Math.floor(h / 2));
+      }
+
+      const sx = Number.isFinite(scaleX) && Math.abs(scaleX) > 0.001 ? scaleX : 1.0;
+      const sy = Number.isFinite(scaleY) && Math.abs(scaleY) > 0.001 ? scaleY : 1.0;
+      if (sx !== 1.0 || sy !== 1.0) {
+        ctx.scale(sx, sy);
+      }
+
+      ctx.drawImage(img, -Math.floor(w / 2), -h);
+    } catch (e) {
+      console.warn('drawSprite error on key:', key, e);
+    } finally {
+      ctx.restore();
     }
-
-    // 3. Rotación e inclinación sobre la cintura/centro de gravedad
-    if (rotation !== 0) {
-      ctx.translate(0, -Math.floor(h / 2));
-      ctx.rotate(rotation);
-      ctx.translate(0, Math.floor(h / 2));
-    }
-
-    // 4. Deformación Squash & Stretch dinámico (respiración, impacto, aterrizaje)
-    if (scaleX !== 1.0 || scaleY !== 1.0) {
-      ctx.scale(scaleX, scaleY);
-    }
-
-    // 5. Dibujar centrado horizontalmente y apoyado sobre el suelo
-    ctx.drawImage(img, -Math.floor(w / 2), -h);
-
-    ctx.restore();
   }
 }
 

@@ -1516,7 +1516,7 @@ class MedellinGame {
       this.cutscene.timer -= dt;
       this.cutscene.animTimer += dt;
       if (this.boss.screenShake > 0) this.boss.screenShake -= dt * 1.8;
-      if (this.boss.flashTimer > 0) this.boss.flashTimer -= dt;
+      // Nota: boss.flashTimer se decrementa una sola vez abajo en la sección general
       if (this.cutscene.timer <= 0) {
         this.cutscene.active = false;
       }
@@ -2642,8 +2642,14 @@ class MedellinGame {
     else if (progress > 0.85) alpha = (1.0 - progress) / 0.15;
 
     ctx.save();
-    ctx.fillStyle = `rgba(12, 10, 24, ${0.72 * alpha})`;
-    ctx.fillRect(0, 0, this.vWidth, this.vHeight);
+    // En lugar de oscurecer toda la pantalla con un velo negro al 72%, usamos
+    // letterbox cinematográfico sutil (14px) arriba y abajo, dejando ver el juego y enemigos con total nitidez
+    const letterboxH = Math.round(14 * alpha);
+    if (letterboxH > 0) {
+      ctx.fillStyle = 'rgba(8, 6, 16, 0.7)';
+      ctx.fillRect(0, 0, this.vWidth, letterboxH);
+      ctx.fillRect(0, this.vHeight - letterboxH, this.vWidth, letterboxH);
+    }
 
     const cx = this.vWidth / 2;
     const cy = this.vHeight / 2 - 10;
@@ -2763,8 +2769,9 @@ class MedellinGame {
         ctx.fillRect(0, 280, maxGroundX, groundH);
       }
 
-    // Marcadores de lluvia de biblias en el suelo
+    // Marcadores de lluvia de biblias en el suelo (Aislado con save/restore)
     this.boss.rainWarnings.forEach(rw => {
+      ctx.save();
       const pulse = Math.sin(Date.now() / 80) * 0.3 + 0.7;
       ctx.fillStyle = `rgba(231, 76, 60, ${0.45 * pulse})`;
       ctx.beginPath();
@@ -2777,6 +2784,7 @@ class MedellinGame {
       ctx.fillStyle = '#f1c40f';
       ctx.font = 'bold 11px monospace';
       ctx.fillText("¡!", rw.x - 4, (rw.z || this.floorZ) - 12);
+      ctx.restore();
     });
 
     // Ondas expansivas terrestres
@@ -2906,13 +2914,21 @@ class MedellinGame {
 
     renderList.sort((a, b) => a.z - b.z);
 
-    // DIBUJAR SOMBRAS EN EL SUELO PRIMERO, LUEGO SPRITES
+    // DIBUJAR SOMBRAS EN EL SUELO PRIMERO, LUEGO SPRITES (Protegido contra excepciones)
     renderList.forEach(item => {
-      this.drawEntityShadow(ctx, item);
+      try {
+        this.drawEntityShadow(ctx, item);
+      } catch (err) {
+        console.warn('Error en drawEntityShadow:', err);
+      }
     });
 
     renderList.forEach(item => {
-      this.drawEntitySprite(ctx, item);
+      try {
+        this.drawEntitySprite(ctx, item);
+      } catch (err) {
+        console.warn('Error en drawEntitySprite:', err);
+      }
     });
 
     // Proyectiles en vuelo
@@ -2967,31 +2983,42 @@ class MedellinGame {
   // SOMBRAS DE CONTACTO Y RENDERIZADO DE ENTIDADES
   // ==========================================
   drawEntityShadow(ctx, item) {
-    const elev = item.elevY || 0;
-    const scale = Math.max(0.3, 1 / (1 + elev * 0.01));
-    let rx = 18 * scale;
-    let rz = 6 * scale;
+    if (!item) return;
+    try {
+      const elev = Number.isFinite(item.elevY) ? Math.max(0, item.elevY) : 0;
+      const scale = Math.max(0.2, Math.min(1.0, 1 / (1 + elev * 0.01)));
+      let rx = 18 * scale;
+      let rz = 6 * scale;
 
-    if (item.type === 'enemy' && item.data.id === 'titan') {
-      rx = 75 * scale;
-      rz = 22 * scale;
-    } else if (item.type === 'enemy' && item.data.role === 'trio_unit') {
-      rx = 42 * scale;
-      rz = 12 * scale;
-    } else if (item.type === 'moto' || item.type === 'empanadas' || item.type === 'testigo_cart') {
-      rx = 32;
-      rz = 8;
-    } else if (item.type === 'critter' || item.type === 'collectible') {
-      rx = 10 * scale;
-      rz = 4 * scale;
+      if (item.type === 'enemy' && item.data && item.data.id === 'titan') {
+        rx = 75 * scale;
+        rz = 22 * scale;
+      } else if (item.type === 'enemy' && item.data && item.data.role === 'trio_unit') {
+        rx = 42 * scale;
+        rz = 12 * scale;
+      } else if (item.type === 'moto' || item.type === 'empanadas' || item.type === 'testigo_cart') {
+        rx = 32;
+        rz = 8;
+      } else if (item.type === 'critter' || item.type === 'collectible') {
+        rx = 10 * scale;
+        rz = 4 * scale;
+      }
+
+      const ix = Number.isFinite(item.x) ? item.x : 0;
+      const iz = Number.isFinite(item.z) ? item.z : (this.floorZ || 315);
+      rx = Math.max(1, rx);
+      rz = Math.max(1, rz);
+
+      ctx.save();
+      ctx.fillStyle = `rgba(0, 0, 0, ${Math.min(0.4, 0.32 * scale)})`;
+      ctx.beginPath();
+      ctx.ellipse(ix, iz, rx, rz, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } catch (e) {
+      console.warn('drawEntityShadow error:', e);
+    } finally {
+      ctx.restore();
     }
-
-    ctx.save();
-    ctx.fillStyle = `rgba(0, 0, 0, ${0.35 * scale})`;
-    ctx.beginPath();
-    ctx.ellipse(item.x, item.z, rx, rz, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
   }
 
   drawEntitySprite(ctx, item) {
@@ -4727,19 +4754,24 @@ class MedellinGame {
       ctx.fillRect(0, 0, this.vWidth, this.vHeight);
     }
     if (this.boss.flashTimer > 0) {
-      ctx.fillStyle = `rgba(255, 235, 140, ${this.boss.flashTimer * 0.75})`;
+      const fAlpha = Math.min(0.35, this.boss.flashTimer * 0.45);
+      ctx.fillStyle = `rgba(255, 235, 140, ${fAlpha})`;
       ctx.fillRect(0, 0, this.vWidth, this.vHeight);
     }
   }
 
   loop(currentTime) {
-    const dt = Math.min((currentTime - this.lastTime) / 1000, 0.1);
-    this.lastTime = currentTime;
+    try {
+      const dt = Math.min((currentTime - this.lastTime) / 1000, 0.1);
+      this.lastTime = currentTime;
 
-    this.update(dt);
-    this.render();
-
-    requestAnimationFrame(this.loop);
+      this.update(dt);
+      this.render();
+    } catch (loopErr) {
+      console.error('Error in game loop:', loopErr);
+    } finally {
+      requestAnimationFrame(this.loop.bind(this));
+    }
   }
 }
 
