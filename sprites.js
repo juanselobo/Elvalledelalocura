@@ -244,9 +244,9 @@ class SpriteManager {
 
       // Nivel 4: Soterrado Inundado (Subway Surfers Paisa)
       'cutscene_soterrado_inundado': 'assets/cutscene_soterrado_inundado.png',
-      'comic_soterrado_1_exterior': 'assets/comic_soterrado_1_exterior.png',
-      'comic_soterrado_2_mientras_tanto': 'assets/comic_soterrado_2_mientras_tanto.png',
-      'comic_soterrado_3_inundado': 'assets/comic_soterrado_3_inundado.png',
+      'comic_soterrado_1_exterior': 'assets/comic_soterrado_1_exterior.png?v=1793518500',
+      'comic_soterrado_2_mientras_tanto': 'assets/comic_soterrado_2_mientras_tanto.png?v=1793518500',
+      'comic_soterrado_3_inundado': 'assets/comic_soterrado_3_inundado.png?v=1793518500',
       'car_taxi_flooded': 'assets/car_taxi_flooded.png',
       'car_sedan_flooded': 'assets/car_sedan_flooded.png',
       'bus_coometropol_flooded': 'assets/bus_coometropol_flooded.png',
