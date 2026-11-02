@@ -492,6 +492,47 @@ class MedellinGame {
         }
       }
       if (this.currentStage === 4) {
+        // En la viñeta 2: Manejo de teclado para el Diálogo Interactivo
+        if (this.stage4 && this.stage4.comicStep === 2) {
+          if (this.stage4.gameOver) {
+            if (k === ' ' || k === 'enter' || k === 'f' || k === 'q' || k === 'e') {
+              if (this.stage4.gameOver.isWin) {
+                this.stage4.comicStep = 3;
+                if (window.retroAudio && window.retroAudio.playWaterSplash) window.retroAudio.playWaterSplash();
+              } else {
+                this.restartStage4Dialogue();
+              }
+              return;
+            }
+          } else {
+            // Teclas numéricas 1, 2, 3, 4
+            if (k === '1') { this.selectStage4Choice(0); return; }
+            if (k === '2') { this.selectStage4Choice(1); return; }
+            if (k === '3') { this.selectStage4Choice(2); return; }
+            if (k === '4') { this.selectStage4Choice(3); return; }
+
+            // Navegación con flechas / W / S
+            const numChoices = (this.stage4._choiceButtons && this.stage4._choiceButtons.length) || 3;
+            if (k === 'arrowup' || k === 'w') {
+              this.stage4.selectedChoiceIndex = (this.stage4.selectedChoiceIndex - 1 + numChoices) % numChoices;
+              if (window.retroAudio && window.retroAudio.playDash) window.retroAudio.playDash();
+              return;
+            }
+            if (k === 'arrowdown' || k === 's') {
+              this.stage4.selectedChoiceIndex = (this.stage4.selectedChoiceIndex + 1) % numChoices;
+              if (window.retroAudio && window.retroAudio.playDash) window.retroAudio.playDash();
+              return;
+            }
+
+            // Confirmar opción resaltada
+            if (k === ' ' || k === 'enter' || k === 'f' || k === 'q' || k === 'e') {
+              this.selectStage4Choice(this.stage4.selectedChoiceIndex || 0);
+              return;
+            }
+          }
+        }
+
+        // En viñetas 1 y 3 (Galería exterior e inundado)
         if (k === ' ' || k === 'enter' || k === 'f' || k === 'c' || k === 'arrowright' || k === 'd') {
           this.advanceStage4Comic(1);
           return;
@@ -5206,20 +5247,167 @@ class MedellinGame {
 
     initStage4Soterrado() {
     this.stage4 = {
-      comicStep: 1,
+      comicStep: 2, // Inicia directamente en el diálogo interactivo
       totalSteps: 3,
-      timer: 0
+      timer: 0,
+      currentNodeId: 'N0',
+      selectedChoiceIndex: 0,
+      gameOver: null,
+      _choiceButtons: [],
+      _restartBtn: null
     };
     if (this.canal) this.canal.active = false;
     if (window.retroAudio) {
       if (window.retroAudio.stopCutsceneBgm) window.retroAudio.stopCutsceneBgm();
-      if (window.retroAudio.playWaterSplash) window.retroAudio.playWaterSplash();
+      if (window.retroAudio.playTransitChime) window.retroAudio.playTransitChime();
     }
   }
 
+  getStage4DialogueData() {
+    const NODES = {
+      N0: {
+        speaker: "AGENTE HINCAPIÉ (TRÁNSITO MEDELLÍN)",
+        text: "¡Buenas noches, joven! ¿Para dónde va con ese afán y esa tabla bajo el brazo? ¿No está viendo el chicharrón tan berraco que tenemos aquí montado? Esto está colapsado hasta San Juan. ¿En qué le puedo colaborar o qué hace por acá?",
+        choices: [
+          { text: "1. Vengo huyendo de una rata mutante gigante que casi me come en la rampa.", next: "N1" },
+          { text: "2. Buenas oficial... ¿Por acá cerquita dónde consigo una fotocopiadora abierta?", next: "N3" },
+          { text: "3. ¿El soterrado inundado? ¡Qué novedad! ¡Cae un sereno y esto se vuelve piscina!", next: "N5" }
+        ]
+      },
+      N1: {
+        speaker: "AGENTE HINCAPIÉ",
+        text: "¿Una rata gigante del tamaño de un bus Coometropol? Joven, ¿usted me está tomando el pelo o es que le dio por oler sacol con los del viaducto? Respete el uniforme, que llevo doce horas de turno sin almorzar.",
+        choices: [
+          { text: "1. Claro que le estoy tomando el pelo, mi cabo. ¡Hay que ser muy pelotudo!", next: "END_DESACATO" },
+          { text: "2. ¡Oficial, hablo en serio! La bestia quedó noqueada contra el muro afuera.", next: "N2" },
+          { text: "3. Mire mi morral: tiene baba ácida verde y pelos como cables de EPM.", next: "N2" }
+        ]
+      },
+      N2: {
+        speaker: "AGENTE HINCAPIÉ",
+        text: "Ave María... ¿Usted sabe que por radio dijeron que en La Minorista se desapareció un bulto de concentrado?... Bueno, supongamos que le creo. Pero igual aquí no puede pasar: el agua tapó los taxis y los choferes están que linchan.",
+        choices: [
+          { text: "1. ¿Y qué hacemos entonces con la gente atrapada, mi cabo?", next: "N6" }
+        ]
+      },
+      N3: {
+        speaker: "AGENTE HINCAPIÉ",
+        text: "¿Una... fotocopiadora? Mijo, estamos en medio de un diluvio bíblico con media ciudad bajo el lodo y ¿usted buscando dónde sacar la cédula ampliada al 150%? ¿Es que no tiene ojos en la cara?",
+        choices: [
+          { text: "1. Es que me dijeron que en La Bayadera solucionan cualquier papel.", next: "END_BAYADERA" },
+          { text: "2. Pues por la 33 todo abre hasta tarde... allá le sacan copia a lo que sea.", next: "N4" },
+          { text: "3. No, mentiras oficial, el susto me tiene hablando bobadas. ¡Mire ese trancón!", next: "N6" }
+        ]
+      },
+      N4: {
+        speaker: "AGENTE HINCAPIÉ",
+        text: "¡Eche! No me mente la 33 que ayer me tocó hacer ronda por allá y eso estaba más concurrido que la misa del Padre Marianito. Pero bueno, no me cambie el tema, que aquí abajo los taxistas están desesperados en los techos.",
+        choices: [
+          { text: "1. ¿Y cómo piensa solucionar este enredo, mi cabo?", next: "N6" }
+        ]
+      },
+      N5: {
+        speaker: "AGENTE HINCAPIÉ",
+        text: "Ah, claro, el ingeniero de esquina vino a dar cátedra. Siempre que cae un aguacero en Guarne o en Caldas, el agua baja con rabia y termina metida aquí. La obra del siglo, decían... ¡y ahora parece piscina olímpica!",
+        choices: [
+          { text: "1. Lo peor es que esa agua del Río Medellín huele a puro desagüe podrido.", next: "N6" },
+          { text: "2. Hermoso Parques del Río arriba pa' fotos, pero aquí abajo tenemos Venecia.", next: "N6" },
+          { text: "3. ¿Y las motobombas de tres mil millones? ¿Las empeñaron en El Hueco?", next: "N6" }
+        ]
+      },
+      N6: {
+        speaker: "AGENTE HINCAPIÉ",
+        text: "Vea, joven... La situación está muy peluda. Tengo reporte de grúas varadas y el alcalde pidiendo orden. Si usted quiere que yo 'mire pa' otro lado' y lo deje pasar a hacer maromas por los techos... hablemos de una colaboración pa' la gaseosa.",
+        choices: [
+          { text: "1. Hágale, mi cabo: tengo $2.000 pesos arrugados y media empanada con ají.", next: "END_SOBORNO" },
+          { text: "2. ¿Soborno descarado? ¡Lo voy a grabar con el celular y lo subo a redes!", next: "END_COMPARENDOS" },
+          { text: "3. ¡A mí no me viene a sacar plata! ¡Cuadremos esto a los puños en el andén!", next: "END_TANQUETA" },
+          { text: "4. Oficial, yo salto por los techos y saco a la gente; usted se lleva el crédito.", next: "SUCCESS_PARKOUR" }
+        ]
+      }
+    };
+
+    const ENDINGS = {
+      END_TANQUETA: {
+        id: 'tanqueta',
+        imageKey: 'ending_tanqueta_esmad',
+        title: '★ GAME OVER PAISA ★',
+        subtitle: '¡LA TANQUETA DEL ESMAD & DESACATO TOTAL!',
+        desc: 'Te paraste a los puños contra el guardia, pero el agente oprimió el botón rojo de su radio riéndose a carcajadas. Una tanqueta blindada del ESMAD apareció disparando un chorro de 500 PSI que te mandó peinado en reversa hasta el cerro Nutibara.'
+      },
+      END_DESACATO: {
+        id: 'desacato',
+        imageKey: 'scene_soterrado_dialogue',
+        title: '★ GAME OVER PAISA ★',
+        subtitle: '¡DESACATO A LA AUTORIDAD!',
+        desc: 'Le dijiste pelotudo al oficial. Te clavaron comparendo por Código de Policía, trabajo comunitario barriendo La Alpujarra y te decomisaron la patineta por tres meses.'
+      },
+      END_BAYADERA: {
+        id: 'bayadera',
+        imageKey: 'scene_soterrado_dialogue',
+        title: '★ GAME OVER PAISA ★',
+        subtitle: '¡DESVALIJADO EN LA BAYADERA!',
+        desc: 'Te fuiste a buscar fotocopias a La Bayadera. En 45 segundos te desvalijaron: se llevaron los rines, la patineta, los cordones de los tenis y hasta la cremallera de la chaqueta.'
+      },
+      END_SOBORNO: {
+        id: 'soborno',
+        imageKey: 'scene_soterrado_dialogue',
+        title: '★ GAME OVER PAISA ★',
+        subtitle: '¡COHECHO DE POBRE CALAÑA!',
+        desc: 'Le ofreciste dos mil barras y media empanada masticada. El agente se ofendió por semejante miseria: "¡A mí no me venga con limosnas!" y te puso los ganchos.'
+      },
+      END_COMPARENDOS: {
+        id: 'comparendos',
+        imageKey: 'scene_soterrado_dialogue',
+        title: '★ GAME OVER PAISA ★',
+        subtitle: '¡EMBARGADO POR EL SIMIT!',
+        desc: 'Amenazaste con denunciarlo. El agente sacó la impresora térmica y te sacó una tira de 4 metros de multas. Ahora tu deuda asciende a 18 salarios mínimos.'
+      },
+      SUCCESS_PARKOUR: {
+        id: 'success',
+        imageKey: 'comic_soterrado_3_inundado',
+        title: '★ ¡PACTO ACORDADO: RUMBO AL RESCATE! ★',
+        subtitle: '¡EL HÉROE ENTRA EN ACCIÓN!',
+        desc: 'El Agente Hincapié sonríe y te choca la mano: "¡Negocio socio! ¡Eso es lo que yo llamo liderazgo comunitario! ¡Péguele al brinco pues, mijo, que si rescata las empanadas le perdono dos fotomultas!"',
+        isWin: true
+      }
+    };
+
+    return { NODES, ENDINGS };
+  }
+
+  selectStage4Choice(choiceIndex) {
+    if (!this.stage4) return;
+    const { NODES, ENDINGS } = this.getStage4DialogueData();
+    const cur = NODES[this.stage4.currentNodeId || 'N0'];
+    if (!cur || !cur.choices || !cur.choices[choiceIndex]) return;
+
+    const chosen = cur.choices[choiceIndex];
+    if (window.retroAudio && window.retroAudio.playCollect) window.retroAudio.playCollect();
+
+    if (chosen.next.startsWith('END_')) {
+      this.stage4.gameOver = ENDINGS[chosen.next];
+      if (window.retroAudio && window.retroAudio.playHit) window.retroAudio.playHit();
+    } else if (chosen.next === 'SUCCESS_PARKOUR') {
+      this.stage4.gameOver = ENDINGS.SUCCESS_PARKOUR;
+      if (window.retroAudio && window.retroAudio.playFanfare) window.retroAudio.playFanfare();
+    } else {
+      this.stage4.currentNodeId = chosen.next;
+      this.stage4.selectedChoiceIndex = 0;
+    }
+  }
+
+  restartStage4Dialogue() {
+    if (!this.stage4) return;
+    this.stage4.currentNodeId = 'N0';
+    this.stage4.selectedChoiceIndex = 0;
+    this.stage4.gameOver = null;
+    if (window.retroAudio && window.retroAudio.playTransitChime) window.retroAudio.playTransitChime();
+  }
+
   advanceStage4Comic(dir = 1) {
-    if (!this.stage4) this.stage4 = { comicStep: 1, totalSteps: 3, timer: 0 };
-    let step = (this.stage4.comicStep || 1) + dir;
+    if (!this.stage4) this.stage4 = { comicStep: 2, totalSteps: 3, timer: 0 };
+    let step = (this.stage4.comicStep || 2) + dir;
     if (step > 3) step = 1;
     if (step < 1) step = 3;
     this.stage4.comicStep = step;
@@ -5232,7 +5420,7 @@ class MedellinGame {
   }
 
   handleClickStage4(clickX, clickY) {
-    if (!this.stage4) this.stage4 = { comicStep: 1, totalSteps: 3, timer: 0 };
+    if (!this.stage4) this.initStage4Soterrado();
 
     // 1. Click en pestañas superiores (Y entre 6 y 34)
     if (this.stage4._tabs && clickY >= 6 && clickY <= 34) {
@@ -5249,7 +5437,39 @@ class MedellinGame {
       }
     }
 
-    // 2. Click en barra inferior: Anterior o Siguiente
+    // 2. Si estamos en la viñeta 2 (Diálogo interactivo)
+    if (this.stage4.comicStep === 2) {
+      // Si está en GameOver o Éxito
+      if (this.stage4.gameOver) {
+        if (this.stage4._restartBtn) {
+          const btn = this.stage4._restartBtn;
+          if (clickX >= btn.x && clickX <= btn.x + btn.w && clickY >= btn.y && clickY <= btn.y + btn.h) {
+            if (this.stage4.gameOver.isWin) {
+              this.stage4.comicStep = 3; // Pasa a la vista del soterrado
+              if (window.retroAudio && window.retroAudio.playWaterSplash) window.retroAudio.playWaterSplash();
+            } else {
+              this.restartStage4Dialogue();
+            }
+            return;
+          }
+        }
+        return;
+      }
+
+      // Clic en botones de opciones de diálogo
+      if (this.stage4._choiceButtons && this.stage4._choiceButtons.length > 0) {
+        for (let i = 0; i < this.stage4._choiceButtons.length; i++) {
+          const b = this.stage4._choiceButtons[i];
+          if (clickX >= b.x && clickX <= b.x + b.w && clickY >= b.y && clickY <= b.y + b.h) {
+            this.selectStage4Choice(i);
+            return;
+          }
+        }
+      }
+      return;
+    }
+
+    // 3. Click en barra inferior para viñetas 1 y 3
     if (clickY >= this.vHeight - 28) {
       if (clickX <= 130) {
         this.advanceStage4Comic(-1);
@@ -5260,42 +5480,172 @@ class MedellinGame {
       }
     }
 
-    // 3. Clic general en cualquier parte del canvas: avanza a la siguiente viñeta
+    // Clic general avanza en viñeta 1 o 3
     this.advanceStage4Comic(1);
   }
 
   drawStage4Soterrado(ctx) {
-    if (!this.stage4) {
-      this.initStage4Soterrado();
-    }
-    const step = this.stage4.comicStep || 1;
+    if (!this.stage4) this.initStage4Soterrado();
+    const step = this.stage4.comicStep || 2;
+    const time = Date.now();
 
     ctx.save();
 
-    // 1. DIBUJAR VIÑETA ACTUAL
-    let spriteKey = 'comic_soterrado_1_exterior';
+    // ==========================================
+    // VIÑETA 2: DIÁLOGO INTERACTIVO CON EL AGENTE DE TRÁNSITO
+    // ==========================================
     if (step === 2) {
-      spriteKey = 'comic_soterrado_2_mientras_tanto';
-    } else if (step >= 3) {
-      spriteKey = 'comic_soterrado_3_inundado';
-    }
+      const { NODES, ENDINGS } = this.getStage4DialogueData();
+      const isGameOver = !!this.stage4.gameOver;
 
-    const img = window.spriteManager.getImage(spriteKey);
-    if (img && img.complete) {
-      ctx.drawImage(img, 0, 0, this.vWidth, this.vHeight);
+      // 1. Imagen de fondo
+      let bgKey = isGameOver ? (this.stage4.gameOver.imageKey || 'scene_soterrado_dialogue') : 'scene_soterrado_dialogue';
+      let bgImg = window.spriteManager.getImage(bgKey) || window.spriteManager.getImage('scene_soterrado_dialogue');
+      if (bgImg && bgImg.complete) {
+        ctx.drawImage(bgImg, 0, 0, this.vWidth, this.vHeight);
+      } else {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, this.vWidth, this.vHeight);
+      }
+
+      // Si es Game Over (Ej. La Tanqueta del ESMAD)
+      if (isGameOver) {
+        const go = this.stage4.gameOver;
+        // Panel translúcido inferior amplio
+        const pY = 220;
+        const pH = 135;
+        ctx.fillStyle = 'rgba(10, 8, 20, 0.94)';
+        ctx.fillRect(16, pY, this.vWidth - 32, pH);
+        ctx.strokeStyle = go.isWin ? '#2ecc71' : '#e74c3c';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(16, pY, this.vWidth - 32, pH);
+
+        // Subtítulo
+        ctx.fillStyle = go.isWin ? '#2ecc71' : '#f39c12';
+        ctx.font = '900 11px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(go.subtitle, this.vWidth / 2, pY + 22);
+
+        // Descripción cómica
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'left';
+        this.wrapText(ctx, go.desc, 32, pY + 44, this.vWidth - 64, 15);
+
+        // Botón de acción (Reintentar o Continuar)
+        const btnW = 320;
+        const btnH = 28;
+        const btnX = (this.vWidth - btnW) / 2;
+        const btnY = pY + pH - 36;
+        const pulse = Math.sin(time / 140) * 0.2 + 0.8;
+
+        ctx.fillStyle = go.isWin ? `rgba(46, 204, 113, ${pulse})` : `rgba(231, 76, 60, ${pulse})`;
+        ctx.fillRect(btnX, btnY, btnW, btnH);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(btnX, btnY, btnW, btnH);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 10px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const label = go.isWin ? "▶ [ ENTER / CLIC ] INICIAR PARKOUR DE TECHOS ▶" : "↺ [ ENTER / CLIC ] PROBAR OTRA DECISIÓN ↺";
+        ctx.fillText(label, btnX + btnW / 2, btnY + btnH / 2);
+
+        this.stage4._restartBtn = { x: btnX, y: btnY, w: btnW, h: btnH };
+        this.stage4._choiceButtons = [];
+      } else {
+        // MODO NODO DE DIÁLOGO ACTIVO
+        const node = NODES[this.stage4.currentNodeId || 'N0'] || NODES['N0'];
+        
+        // Caja de Diálogo Ampliada para Móviles y Consolas (Ocupa franja inferior con máxima legibilidad)
+        const boxX = 14;
+        const boxY = 188;
+        const boxW = this.vWidth - 28;
+        const boxH = 166;
+
+        ctx.fillStyle = 'rgba(8, 6, 18, 0.95)';
+        ctx.fillRect(boxX, boxY, boxW, boxH);
+        ctx.strokeStyle = '#f1c40f';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+        // Esquinas reforzadas estilo arcade
+        ctx.fillStyle = '#f1c40f';
+        ctx.fillRect(boxX, boxY, 5, 5);
+        ctx.fillRect(boxX + boxW - 5, boxY, 5, 5);
+        ctx.fillRect(boxX, boxY + boxH - 5, 5, 5);
+        ctx.fillRect(boxX + boxW - 5, boxY + boxH - 5, 5, 5);
+
+        // 1. Etiqueta del interlocutor
+        ctx.fillStyle = 'rgba(241, 196, 15, 0.15)';
+        ctx.fillRect(boxX + 10, boxY + 8, 260, 16);
+        ctx.strokeStyle = '#f1c40f';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(boxX + 10, boxY + 8, 260, 16);
+
+        ctx.fillStyle = '#f1c40f';
+        ctx.font = '900 10px monospace';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`📢 ${node.speaker}`, boxX + 16, boxY + 16);
+
+        // 2. Texto del Diálogo (Tipografía grande con sombra para pantallas portátiles)
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textBaseline = 'top';
+        const lineH = 15;
+        const textLines = this.wrapText(ctx, node.text, boxX + 12, boxY + 30, boxW - 24, lineH);
+        const choicesStartY = boxY + 30 + textLines * lineH + 6;
+
+        // 3. Botones de Selección Múltiple (Apilados y de gran tamaño para toque dactilar)
+        this.stage4._choiceButtons = [];
+        const btnH = 22;
+        const btnGap = 5;
+
+        node.choices.forEach((ch, idx) => {
+          const cy = choicesStartY + idx * (btnH + btnGap);
+          if (cy + btnH > boxY + boxH) return; // Evitar desborde
+
+          const isHover = (idx === (this.stage4.selectedChoiceIndex || 0));
+          ctx.fillStyle = isHover ? 'rgba(241, 196, 15, 0.35)' : 'rgba(25, 20, 45, 0.90)';
+          ctx.fillRect(boxX + 10, cy, boxW - 20, btnH);
+          ctx.strokeStyle = isHover ? '#f1c40f' : 'rgba(255, 255, 255, 0.3)';
+          ctx.lineWidth = isHover ? 1.5 : 1;
+          ctx.strokeRect(boxX + 10, cy, boxW - 20, btnH);
+
+          // Texto de la opción
+          ctx.fillStyle = isHover ? '#f1c40f' : '#ffffff';
+          ctx.font = 'bold 10px monospace';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(ch.text, boxX + 18, cy + btnH / 2);
+
+          this.stage4._choiceButtons.push({
+            x: boxX + 10,
+            y: cy,
+            w: boxW - 20,
+            h: btnH,
+            index: idx
+          });
+        });
+      }
     } else {
-      ctx.fillStyle = '#110e20';
-      ctx.fillRect(0, 0, this.vWidth, this.vHeight);
-      ctx.fillStyle = '#f1c40f';
-      ctx.font = '900 16px "Impact", monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText("NIVEL 4: SOTERRADO INUNDADO (CARGANDO ILUSTRACIÓN...)", this.vWidth / 2, this.vHeight / 2);
+      // Viñetas 1 y 3 (Galería visual estándar)
+      let spriteKey = (step === 1) ? 'comic_soterrado_1_exterior' : 'comic_soterrado_3_inundado';
+      const img = window.spriteManager.getImage(spriteKey);
+      if (img && img.complete) {
+        ctx.drawImage(img, 0, 0, this.vWidth, this.vHeight);
+      } else {
+        ctx.fillStyle = '#110e20';
+        ctx.fillRect(0, 0, this.vWidth, this.vHeight);
+      }
     }
 
-    // 2. PESTAÑAS SUPERIORES INTERACTIVAS (TABS PARA SELECCIONAR VIÑETAS DIRECTAMENTE)
+    // PESTAÑAS SUPERIORES INTERACTIVAS
     const tabs = [
       { id: 1, label: "1. AFUERA (PARQUES)", w: 140 },
-      { id: 2, label: "2. MIENTRAS TANTO...", w: 160 },
+      { id: 2, label: "2. DIÁLOGO: EL AGENTE", w: 160 },
       { id: 3, label: "3. SOTERRADO INUNDADO", w: 165 }
     ];
     const totalTabW = tabs.reduce((acc, t) => acc + t.w, 0) + (tabs.length - 1) * 8;
@@ -5305,20 +5655,16 @@ class MedellinGame {
 
     tabs.forEach(tab => {
       const isCur = (tab.id === step);
-      // Sombra
       ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
       ctx.fillRect(curX + 2, tabY + 2, tab.w, tabH);
 
-      // Fondo
       ctx.fillStyle = isCur ? '#f1c40f' : 'rgba(18, 14, 32, 0.88)';
       ctx.fillRect(curX, tabY, tab.w, tabH);
 
-      // Borde
       ctx.strokeStyle = isCur ? '#ffffff' : 'rgba(255, 255, 255, 0.35)';
       ctx.lineWidth = isCur ? 2 : 1;
       ctx.strokeRect(curX, tabY, tab.w, tabH);
 
-      // Texto
       ctx.fillStyle = isCur ? '#0a0a0a' : '#f5f6fa';
       ctx.font = '900 9px "Impact", monospace';
       ctx.textAlign = 'center';
@@ -5330,49 +5676,30 @@ class MedellinGame {
     });
 
     this.stage4._tabs = tabs;
-    this.stage4._tabY = tabY;
-    this.stage4._tabH = tabH;
-
-    // 3. BARRA INFERIOR DE NAVEGACIÓN Y REVISIÓN
-    const barY = this.vHeight - 26;
-    ctx.fillStyle = 'rgba(8, 6, 16, 0.88)';
-    ctx.fillRect(0, barY, this.vWidth, 26);
-    ctx.strokeStyle = '#f1c40f';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(0, barY, this.vWidth, 26);
-
-    // Botón Anterior (Izquierda)
-    ctx.fillStyle = (step > 1) ? '#e67e22' : 'rgba(120, 120, 120, 0.45)';
-    ctx.fillRect(8, barY + 3, 110, 20);
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(8, barY + 3, 110, 20);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '900 9px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText("◀ [A] ANTERIOR", 63, barY + 13);
-
-    // Centro: Indicador / Ayuda
-    ctx.fillStyle = '#f1c40f';
-    ctx.font = '900 9px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText("▶ [ESPACIO / ENTER / CLIC] AVANZAR", this.vWidth / 2, barY + 13);
-
-    // Botón Siguiente / Repetir (Derecha)
-    const isLast = (step === 3);
-    ctx.fillStyle = isLast ? '#27ae60' : '#3498db';
-    ctx.fillRect(this.vWidth - 118, barY + 3, 110, 20);
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(this.vWidth - 118, barY + 3, 110, 20);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '900 9px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(isLast ? "🔄 [D] REPETIR" : "[D] SIGUIENTE ▶", this.vWidth - 63, barY + 13);
-
     ctx.restore();
   }
+
+  wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    const words = text.split(' ');
+    let line = '';
+    let lineCount = 0;
+
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + ' ';
+      const metrics = ctx.measureText(testLine);
+      const testWidth = metrics.width;
+      if (testWidth > maxWidth && n > 0) {
+        ctx.fillText(line, x, y + lineCount * lineHeight);
+        line = words[n] + ' ';
+        lineCount++;
+      } else {
+        line = testLine;
+      }
+    }
+    ctx.fillText(line, x, y + lineCount * lineHeight);
+    return lineCount + 1;
+  }
+
 
   advanceFloodedCutscene() {
     if (!this.canal.climax || this.canal.climax.state !== 'flooded_cutscene') return;
