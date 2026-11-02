@@ -116,14 +116,14 @@ class MedellinGame {
         name: 'EL ALCALDE',
         alias: 'FICO GUTIÉRREZ',
         epithet: 'EL GUARDIÁN DE LA ALCALDÍA',
-        style: 'Brawler Institucional / Choque de Orden',
-        bio: '¡Aquí estamos poniendo orden! Camisa abierta, mirada intensa y sonrisa incansable de campaña.',
-        special: '★ Sonrisa de Campaña & Choque de Autoridad',
+        style: 'Brawler Institucional / Choque de Autoridad',
+        bio: '¡Aquí estamos poniendo orden y seguridad! Saco azul marino, mirada de autoridad y mano firme en las calles.',
+        special: '★ Mano Firme & Choque de Autoridad',
         speed: 3,
         power: 4,
         tech: 5,
-        status: '🔒 CAMPAÑA',
-        ready: false,
+        status: '★ LISTO ★',
+        ready: true,
         color: '#2980b9',
         portrait: 'portrait_fico'
       }
@@ -3899,6 +3899,10 @@ class MedellinGame {
       window.spriteManager.drawSprite(ctx, idleFrames[fIdx], sprX, sprY, true, 1.0, 0, 1.6, 1.6);
     } else if (selChar.id === 'fuisioso') {
       const idleFrames = ['fuisioso_idle1', 'fuisioso_idle2', 'fuisioso_idle3', 'fuisioso_idle2'];
+      const fIdx = Math.floor(time / 220) % idleFrames.length;
+      window.spriteManager.drawSprite(ctx, idleFrames[fIdx], sprX, sprY, true, 1.0, 0, 1.6, 1.6);
+    } else if (selChar.id === 'fico') {
+      const idleFrames = ['fico_idle1', 'fico_idle2', 'fico_idle3', 'fico_idle2'];
       const fIdx = Math.floor(time / 220) % idleFrames.length;
       window.spriteManager.drawSprite(ctx, idleFrames[fIdx], sprX, sprY, true, 1.0, 0, 1.6, 1.6);
     } else {

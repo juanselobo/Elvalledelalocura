@@ -97,13 +97,13 @@ Mientras tanto, en la superficie, la matriarca del barrio, **Doña Gloria**, es 
   - *"¡Cógela suave socio, que aquí lo que sobra es berraquera!"*
 
 #### 👔 EL ALCALDE (FICO) — *"El Guardián de la Alcaldía"*
-- **Arquetipo:** Brawler Institucional / Choque de Autoridad *(Desbloqueable Campaña)*.
-- **Estética:** Camisa blanca manga larga semiabierta en el cuello, chaleco institucional azul con logos de la ciudad, reloj deportivo y peinado siempre impecable a pesar de los golpes.
-- **Biografía:** Siempre en campaña y siempre presente en el lugar de los hechos. Armado con megáfono y un discurso motivacional atronador, busca "poner orden" en cada esquina del Valle.
+- **Arquetipo:** Brawler Institucional / Choque de Autoridad *(Desbloqueado / Jugable)*.
+- **Estética:** Saco/blazer azul marino abierto en combate, camisa celeste claro de cuello abierto, mirada decidida de autoridad, cabello castaño ondulado peinado hacia atrás con sienes plateadas y barba sombreada de tres días.
+- **Biografía:** Con presencia constante en territorio, saco azul marino y mano firme, pone orden y seguridad en las calles del Valle de Aburrá ante la delincuencia y las amenazas colosales.
 - **Atributos:** Velocidad: `3/5` | Fuerza: `4/5` | Técnica: `5/5`
 - **Movimientos Especiales:**
-  - *Sonrisa de Campaña:* Ráfaga de destellos fotográficos que encandila y frena a los enemigos.
-  - *Operativo Relámpago:* Embestida frontal con rueda de prensa improvisada.
+  - *Mano Firme & Choque de Autoridad:* Barrido contundente y golpe de autoridad que limpia el área de maleantes.
+  - *Operativo Relámpago:* Embestida frontal veloz con ráfagas de puños de justicia institucional.
 - **Frases de Combate:**
   - *"¡Aquí estamos poniendo orden en la ciudad, pa' que sepan!"*
   - *"¡Cero tolerancia con los bandidos y con las ratas gigantes!"*

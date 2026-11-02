@@ -196,6 +196,43 @@ class SpriteManager {
       'fuisioso_sniff': 'assets/fuisioso_sniff.png',
 
       // ==============================================================
+      // 5C. LUCHADOR PLAYABLE: EL ALCALDE (FICO GUTIÉRREZ)
+      // ==============================================================
+      'fico_idle': 'assets/fico_idle.png',
+      'fico_idle1': 'assets/fico_idle1.png',
+      'fico_idle2': 'assets/fico_idle2.png',
+      'fico_idle3': 'assets/fico_idle3.png',
+      'fico_walk1': 'assets/fico_walk1.png',
+      'fico_walk2': 'assets/fico_walk2.png',
+      'fico_walk3': 'assets/fico_walk3.png',
+      'fico_run_1': 'assets/fico_run_1.png',
+      'fico_run_2': 'assets/fico_run_2.png',
+      'fico_run_3': 'assets/fico_run_3.png',
+      'fico_run_4': 'assets/fico_run_4.png',
+      'fico_run_5': 'assets/fico_run_5.png',
+      'fico_run_6': 'assets/fico_run_6.png',
+      'fico_jump': 'assets/fico_jump.png',
+      'fico_jump_ascend': 'assets/fico_jump_ascend.png',
+      'fico_jump_peak': 'assets/fico_jump_peak.png',
+      'fico_jump_descend': 'assets/fico_jump_descend.png',
+      'fico_jumpkick': 'assets/fico_jumpkick.png',
+      'fico_punch': 'assets/fico_punch.png',
+      'fico_punch_jab': 'assets/fico_punch_jab.png',
+      'fico_punch_cross': 'assets/fico_punch_cross.png',
+      'fico_punch_hook': 'assets/fico_punch_hook.png',
+      'fico_kick': 'assets/fico_kick.png',
+      'fico_kick_roundhouse': 'assets/fico_kick_roundhouse.png',
+      'fico_kick_low': 'assets/fico_kick_low.png',
+      'fico_kick_dragon': 'assets/fico_kick_dragon.png',
+      'fico_blitz': 'assets/fico_blitz.png',
+      'fico_suplex': 'assets/fico_suplex.png',
+      'fico_hurt': 'assets/fico_hurt.png',
+      'fico_rail': 'assets/fico_rail.png',
+      'fico_downhill_slide': 'assets/fico_downhill_slide.png',
+      'fico_eat': 'assets/fico_eat.png',
+      'fico_sniff': 'assets/fico_sniff.png',
+
+      // ==============================================================
       // 6. ENEMIGO 1: GAMÍN DE LA LADERA (ANIMACIONES 60 FPS)
       // ==============================================================
       'gamin_walk_1': 'assets/gamin_walk_1.png',
