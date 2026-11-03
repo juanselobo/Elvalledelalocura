@@ -240,7 +240,36 @@ window.Level4 = {
     this.selectStage4Choice(this.stage4.selectedChoiceIndex || 0);
   },
 
-    handleMouseMoveStage4(mouseX, mouseY) {
+      selectStage4Choice(choiceIndex) {
+    if (!this.stage4) return;
+    const { NODES, ENDINGS } = this.getStage4DialogueData();
+    const cur = NODES[this.stage4.currentNodeId || 'N0'];
+    if (!cur || !cur.choices || !cur.choices[choiceIndex]) return;
+
+    const chosen = cur.choices[choiceIndex];
+    if (window.retroAudio && window.retroAudio.playCollect) window.retroAudio.playCollect();
+
+    if (chosen.next.startsWith('END_')) {
+      this.stage4.gameOver = ENDINGS[chosen.next];
+      if (window.retroAudio && window.retroAudio.playHit) window.retroAudio.playHit();
+    } else if (chosen.next === 'SUCCESS_PARKOUR') {
+      this.stage4.gameOver = ENDINGS.SUCCESS_PARKOUR;
+      if (window.retroAudio && window.retroAudio.playFanfare) window.retroAudio.playFanfare();
+    } else {
+      this.stage4.currentNodeId = chosen.next;
+      this.stage4.selectedChoiceIndex = 0;
+    }
+  },
+
+  restartStage4Dialogue() {
+    if (!this.stage4) return;
+    this.stage4.currentNodeId = 'N0';
+    this.stage4.selectedChoiceIndex = 0;
+    this.stage4.gameOver = null;
+    if (window.retroAudio && window.retroAudio.playTransitChime) window.retroAudio.playTransitChime();
+  },
+
+  handleMouseMoveStage4(mouseX, mouseY) {
     if (!this.stage4 || this.stage4.comicStep !== 3) return;
     if (this.stage4.gameOver) {
       if (this.stage4._restartBtn) {
@@ -549,7 +578,7 @@ drawStage4Soterrado(ctx) {
         const go = this.stage4.gameOver;
         const pY = 200;
         const pH = 150;
-        ctx.fillStyle = 'rgba(8, 6, 18, 0.96)';
+        ctx.fillStyle = 'rgba(8, 6, 18, 0.65)';
         ctx.fillRect(14, pY, this.vWidth - 28, pH);
         ctx.strokeStyle = go.isWin ? '#2ecc71' : '#f1c40f';
         ctx.lineWidth = 2;
@@ -602,11 +631,11 @@ drawStage4Soterrado(ctx) {
         
         // Caja de Diálogo Ampliada para Máxima Legibilidad
         const boxX = 12;
-        const boxY = 158;
+        const boxY = 176;
         const boxW = this.vWidth - 24;
-        const boxH = 196;
+        const boxH = 176;
 
-        ctx.fillStyle = 'rgba(7, 5, 16, 0.96)';
+        ctx.fillStyle = 'rgba(8, 6, 18, 0.62)';
         ctx.fillRect(boxX, boxY, boxW, boxH);
         ctx.strokeStyle = '#f1c40f';
         ctx.lineWidth = 1.5;
@@ -663,7 +692,7 @@ drawStage4Soterrado(ctx) {
 
           // Fondo del botón
           if (isSelected) {
-            ctx.fillStyle = 'rgba(241, 196, 15, 0.32)';
+            ctx.fillStyle = 'rgba(241, 196, 15, 0.40)';
             ctx.fillRect(boxX + 10, cy, boxW - 20, btnH);
             ctx.strokeStyle = '#f1c40f';
             ctx.lineWidth = 2;
@@ -677,7 +706,7 @@ drawStage4Soterrado(ctx) {
             ctx.textBaseline = 'middle';
             ctx.fillText("▶", boxX + 14 + arrowBounce, cy + btnH / 2);
           } else {
-            ctx.fillStyle = 'rgba(20, 16, 38, 0.90)';
+            ctx.fillStyle = 'rgba(16, 12, 30, 0.55)';
             ctx.fillRect(boxX + 10, cy, boxW - 20, btnH);
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
             ctx.lineWidth = 1;

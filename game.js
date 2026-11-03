@@ -620,27 +620,34 @@ class MedellinGame {
       el.addEventListener('mouseleave', handleUp);
       el.addEventListener('click', (e) => {
         if (!isPressed) {
-          handleDown(e);
-          setTimeout(() => handleUp(e), 80);
+          if (window.retroAudio && window.retroAudio.init) { try { window.retroAudio.init(); } catch (err) {} }
+          onDown();
+          if (onUp) onUp();
         }
       });
     };
 
-    // D-Pad Game Boy Color con soporte para selección de personaje
+    // D-Pad Game Boy Color con soporte para selección de personaje y navegación de diálogo Nivel 4
     bindBtn('btnLeft', () => {
       if (this.gameState === 'CHAR_SELECT') { this.selectPrevChar(); return; }
-      if (this.currentStage === 4) { this.advanceStage4Comic(-1); return; }
+      if (this.currentStage === 4 && this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
+        this.advanceStage4Comic(-1);
+        return;
+      }
       this.keys.left = true;
     }, () => { this.keys.left = false; this.player.isDashing = false; });
 
     bindBtn('btnRight', () => {
       if (this.gameState === 'CHAR_SELECT') { this.selectNextChar(); return; }
-      if (this.currentStage === 4) { this.advanceStage4Comic(1); return; }
+      if (this.currentStage === 4 && this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
+        this.advanceStage4Comic(1);
+        return;
+      }
       this.keys.right = true;
     }, () => { this.keys.right = false; this.player.isDashing = false; });
 
     bindBtn('btnUp', () => {
-      if (this.currentStage === 4 && this.stage4 && this.stage4.comicStep === 2) {
+      if (this.currentStage === 4 && this.stage4 && this.stage4.comicStep === 3) {
         if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
         return;
       }
@@ -648,19 +655,19 @@ class MedellinGame {
     }, () => { this.keys.up = false; });
 
     bindBtn('btnDown', () => {
-      if (this.currentStage === 4 && this.stage4 && this.stage4.comicStep === 2) {
+      if (this.currentStage === 4 && this.stage4 && this.stage4.comicStep === 3) {
         if (this.navigateStage4Choice) this.navigateStage4Choice(1);
         return;
       }
       this.keys.down = true;
     }, () => { this.keys.down = false; });
 
-    // Botones de acción principales Game Boy Color
+    // Botones de acción principales Game Boy Color (A, B, Jump, etc.)
     bindBtn('btnJump', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
-      if (this.currentStage === 4) {
-        if (this.stage4 && this.stage4.comicStep === 2) {
+      if (this.currentStage === 4 && this.stage4) {
+        if (this.stage4.comicStep === 3) {
           if (this.confirmStage4Choice) this.confirmStage4Choice();
         } else {
           this.advanceStage4Comic(1);
@@ -669,48 +676,75 @@ class MedellinGame {
       }
       this.triggerJump();
     });
+
     bindBtn('btnPunch', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
-      if (this.currentStage === 4 && this.stage4 && this.stage4.comicStep === 2) {
-        if (this.confirmStage4Choice) this.confirmStage4Choice();
+      if (this.currentStage === 4 && this.stage4) {
+        if (this.stage4.comicStep === 3) {
+          if (this.confirmStage4Choice) this.confirmStage4Choice();
+        } else {
+          this.advanceStage4Comic(1);
+        }
         return;
       }
       this.triggerAttack();
     });
+
     bindBtn('btnKick', () => {
-      if (this.currentStage === 4 && this.stage4 && this.stage4.comicStep === 2) {
-        if (this.confirmStage4Choice) this.confirmStage4Choice();
+      if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
+      if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
+      if (this.currentStage === 4 && this.stage4) {
+        if (this.stage4.comicStep === 3) {
+          if (this.confirmStage4Choice) this.confirmStage4Choice();
+        } else {
+          this.advanceStage4Comic(1);
+        }
         return;
       }
       this.triggerSpecial();
     });
+
     bindBtn('btnRun', () => { this.player.isDashing = !this.player.isDashing; });
 
-    // Botón de ACCION / HABLAR para celular
+    // Botón de ACCION / HABLAR / ACEPTAR para celular
     bindBtn('btnInteract', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
-      if (this.currentStage === 4 && this.stage4 && this.stage4.comicStep === 2) {
-        if (this.confirmStage4Choice) this.confirmStage4Choice();
+      if (this.currentStage === 4 && this.stage4) {
+        if (this.stage4.comicStep === 3) {
+          if (this.confirmStage4Choice) this.confirmStage4Choice();
+        } else {
+          this.advanceStage4Comic(1);
+        }
         return;
       }
       this.interact();
     });
+
     bindBtn('btnStart', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
+      if (this.currentStage === 4 && this.stage4) {
+        if (this.stage4.comicStep === 3) {
+          if (this.confirmStage4Choice) this.confirmStage4Choice();
+        } else {
+          this.advanceStage4Comic(1);
+        }
+        return;
+      }
       this.interact();
     });
+
     bindBtn('btnSelect', () => {
-      if (window.retroAudio) {
-        window.retroAudio.init();
-        const isPlaying = window.retroAudio.toggleBgm();
-        const musicBtn = document.getElementById('btnToggleMusic');
-        if (musicBtn) {
-          musicBtn.textContent = isPlaying ? "🎵 MÚSICA: ON" : "🎵 MÚSICA: OFF";
-          musicBtn.style.color = isPlaying ? "#2ecc71" : "#f1c40f";
+      if (this.gameState === 'CHAR_SELECT') { this.selectNextChar(); return; }
+      if (this.currentStage === 4 && this.stage4) {
+        if (this.stage4.comicStep === 3) {
+          if (this.navigateStage4Choice) this.navigateStage4Choice(1);
+        } else {
+          this.advanceStage4Comic(1);
         }
+        return;
       }
     });
   }
