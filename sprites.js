@@ -319,7 +319,28 @@ class SpriteManager {
       // Nivel 4: Soterrado Inundado (Subway Surfers Paisa)
       'cutscene_soterrado_inundado': 'assets/cutscene_soterrado_inundado.png',
       'scene_soterrado_dialogue': 'assets/scene_soterrado_dialogue.png',
+
+      // Los 7 Momentos Emocionales del Soterrado (Capcom CPS-3 Arcade Cutscenes)
+      'scene_soterrado_01_encuentro': 'assets/scene_soterrado_01_encuentro.png',
+      'scene_soterrado_02_rata_incredulidad': 'assets/scene_soterrado_02_rata_incredulidad.png',
+      'scene_soterrado_03_fotocopiadora_facepalm': 'assets/scene_soterrado_03_fotocopiadora_facepalm.png',
+      'scene_soterrado_04_inundacion_sarcasmo': 'assets/scene_soterrado_04_inundacion_sarcasmo.png',
+      'scene_soterrado_05_soborno_negociacion': 'assets/scene_soterrado_05_soborno_negociacion.png',
+      'scene_soterrado_06_radio_panico': 'assets/scene_soterrado_06_radio_panico.png',
+      'scene_soterrado_07_alianza_parkour': 'assets/scene_soterrado_07_alianza_parkour.png',
+      'scene_soterrado_08_minorista_duda': 'assets/scene_soterrado_08_minorista_duda.png',
+      'scene_soterrado_09_la33_taxistas': 'assets/scene_soterrado_09_la33_taxistas.png',
+      'scene_soterrado_10_requisa_bolsillos': 'assets/scene_soterrado_10_requisa_bolsillos.png',
+      'scene_soterrado_11_panico_nequi': 'assets/scene_soterrado_11_panico_nequi.png',
+      'scene_soterrado_12_billete_cincuenta': 'assets/scene_soterrado_12_billete_cincuenta.png',
+      'scene_soterrado_13_influencer_grabar': 'assets/scene_soterrado_13_influencer_grabar.png',
+      'scene_soterrado_14_furia_policial': 'assets/scene_soterrado_14_furia_policial.png',
+      'scene_soterrado_15_briefing_tactico': 'assets/scene_soterrado_15_briefing_tactico.png',
       'ending_tanqueta_esmad': 'assets/ending_tanqueta_esmad.png',
+      'ending_desacato_autoridad': 'assets/ending_desacato_autoridad.png',
+      'ending_desvalijado_bayadera': 'assets/ending_desvalijado_bayadera.png',
+      'ending_soborno_empanada': 'assets/ending_soborno_empanada.png',
+      'ending_embargado_simit': 'assets/ending_embargado_simit.png',
       'comic_soterrado_1_exterior': 'assets/comic_soterrado_1_exterior.png?v=1793518500',
       'comic_soterrado_2_mientras_tanto': 'assets/comic_soterrado_2_mientras_tanto.png?v=1793518500',
       'comic_soterrado_3_inundado': 'assets/comic_soterrado_3_inundado.png?v=1793518500',
@@ -363,7 +384,7 @@ class SpriteManager {
 
     const keys = Object.keys(assetList);
     this.totalImages = keys.length;
-    const assetVersion = 'v1.7.1';
+    const assetVersion = 'v1.7.7';
 
     keys.forEach(key => {
       const img = new Image();
