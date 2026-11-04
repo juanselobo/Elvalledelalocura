@@ -754,8 +754,8 @@ drawStage4Soterrado(ctx) {
           if (isSelected) {
             ctx.save();
             ctx.shadowColor = '#f1c40f';
-            ctx.shadowBlur = 8;
-            ctx.fillStyle = 'rgba(241, 196, 15, 0.45)';
+            ctx.shadowBlur = 10;
+            ctx.fillStyle = 'rgba(241, 196, 15, 0.72)';
             ctx.fillRect(boxX + 10, cy, boxW - 20, btnH);
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 2;
@@ -764,13 +764,13 @@ drawStage4Soterrado(ctx) {
 
             // Flecha arcade dorada brillante
             const arrowBounce = Math.sin(time / 100) * 3;
-            ctx.fillStyle = '#f1c40f';
+            ctx.fillStyle = '#000000';
             ctx.font = '900 12px monospace';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
             ctx.fillText("▶", boxX + 14 + arrowBounce, cy + btnH / 2);
           } else {
-            ctx.fillStyle = 'rgba(6, 10, 24, 0.38)';
+            ctx.fillStyle = 'rgba(6, 10, 24, 0.65)';
             ctx.fillRect(boxX + 10, cy, boxW - 20, btnH);
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
             ctx.lineWidth = 1;
@@ -779,26 +779,42 @@ drawStage4Soterrado(ctx) {
 
           // Badge de número [1], [2], [3], [4]
           const badgeX = isSelected ? boxX + 28 : boxX + 16;
-          ctx.fillStyle = isSelected ? '#f1c40f' : 'rgba(255, 255, 255, 0.18)';
+          ctx.fillStyle = isSelected ? '#000000' : 'rgba(255, 255, 255, 0.18)';
           ctx.fillRect(badgeX, cy + 2, 18, btnH - 4);
-          ctx.fillStyle = isSelected ? '#000000' : '#f1c40f';
+          ctx.fillStyle = '#f1c40f';
           ctx.font = '900 9.5px monospace';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(`[${idx + 1}]`, badgeX + 9, cy + btnH / 2);
 
-          // Texto de la opción con sombra protectora
+          // Texto de la opción con sombra protectora y subrayado en la opción seleccionada
           ctx.save();
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
-          ctx.shadowBlur = 3;
-          ctx.shadowOffsetX = 1;
-          ctx.shadowOffsetY = 1;
-
-          ctx.fillStyle = isSelected ? '#ffffff' : '#e6e6e6';
-          ctx.font = isSelected ? '900 10px monospace' : 'bold 9.5px monospace';
+          if (isSelected) {
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 1;
+            ctx.shadowOffsetY = 1;
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 10.5px monospace';
+          } else {
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+            ctx.shadowBlur = 3;
+            ctx.shadowOffsetX = 1;
+            ctx.shadowOffsetY = 1;
+            ctx.fillStyle = '#cccccc';
+            ctx.font = 'bold 9.5px monospace';
+          }
           ctx.textAlign = 'left';
           ctx.textBaseline = 'middle';
-          ctx.fillText(ch.text, badgeX + 24, cy + btnH / 2);
+          const textX = badgeX + 24;
+          ctx.fillText(ch.text, textX, cy + btnH / 2 - (isSelected ? 1 : 0));
+
+          if (isSelected) {
+            const measuredW = ctx.measureText ? ctx.measureText(ch.text).width : 260;
+            const underlineW = Math.min(boxW - 20 - (textX - (boxX + 10)) - 8, measuredW);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(textX, cy + btnH - 3, underlineW, 2);
+          }
           ctx.restore();
 
           this.stage4._choiceButtons.push({
