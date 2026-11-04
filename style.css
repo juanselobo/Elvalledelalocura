@@ -224,6 +224,9 @@ body {
    (Espacio central liberado, alineación hacia adentro)
    ========================================== */
 .gbc-controls-deck {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -254,6 +257,9 @@ body {
 }
 
 .gbc-dpad-btn {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   background: #1c1d24;
   border: none;
   color: #4b5262;

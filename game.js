@@ -600,20 +600,23 @@ class MedellinGame {
       if (!el) return;
       let lastPressTime = 0;
 
-      const press = (e) => {
+      const triggerPress = (e) => {
         if (e) {
           if (e.cancelable && e.preventDefault) e.preventDefault();
           if (e.stopPropagation) e.stopPropagation();
         }
         const now = Date.now();
-        if (now - lastPressTime < 50) return; // anti-rebote simple
+        if (now - lastPressTime < 60) return; // Anti-rebote
         lastPressTime = now;
+
         el.classList.add('pressed');
-        if (window.retroAudio && window.retroAudio.init) { try { window.retroAudio.init(); } catch (err) {} }
+        if (window.retroAudio && window.retroAudio.init) {
+          try { window.retroAudio.init(); } catch (err) {}
+        }
         onDown();
       };
 
-      const release = (e) => {
+      const triggerRelease = (e) => {
         if (e) {
           if (e.cancelable && e.preventDefault) e.preventDefault();
           if (e.stopPropagation) e.stopPropagation();
@@ -622,23 +625,29 @@ class MedellinGame {
         if (onUp) onUp();
       };
 
-      if (window.PointerEvent) {
-        el.addEventListener('pointerdown', press);
-        el.addEventListener('pointerup', release);
-        el.addEventListener('pointercancel', release);
-        el.addEventListener('pointerleave', release);
-      } else {
-        el.addEventListener('touchstart', press, { passive: false });
-        el.addEventListener('touchend', release, { passive: false });
-        el.addEventListener('touchcancel', release, { passive: false });
-        el.addEventListener('mousedown', press);
-        el.addEventListener('mouseup', release);
-        el.addEventListener('mouseleave', release);
-      }
+      // 1. Soporte Touch directo nativo (Fundamental para celulares iOS / Android)
+      el.addEventListener('touchstart', triggerPress, { passive: false });
+      el.addEventListener('touchend', triggerRelease, { passive: false });
+      el.addEventListener('touchcancel', triggerRelease, { passive: false });
 
+      // 2. Soporte Pointer Events (para stylus y dispositivos híbridos)
+      el.addEventListener('pointerdown', (e) => {
+        if (e.pointerType !== 'touch') triggerPress(e);
+      });
+      el.addEventListener('pointerup', (e) => {
+        if (e.pointerType !== 'touch') triggerRelease(e);
+      });
+      el.addEventListener('pointerleave', triggerRelease);
+      el.addEventListener('pointercancel', triggerRelease);
+
+      // 3. Soporte Ratón Desktop
+      el.addEventListener('mousedown', (e) => triggerPress(e));
+      el.addEventListener('mouseup', triggerRelease);
+      el.addEventListener('mouseleave', triggerRelease);
+
+      // 4. Click de respaldo con anti-rebote
       el.addEventListener('click', (e) => {
-        if (e.cancelable && e.preventDefault) e.preventDefault();
-        if (e.stopPropagation) e.stopPropagation();
+        triggerPress(e);
       });
     };
 
@@ -649,7 +658,6 @@ class MedellinGame {
         if (this.stage4.comicStep === 3) {
           if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
         }
-        // NO retroceder el cómic hacia la izquierda
         return;
       }
       this.keys.left = true;
@@ -690,6 +698,88 @@ class MedellinGame {
       this.keys.down = true;
     }, () => { this.keys.down = false; });
 
+    // D-Pad Touch Container: Soporte para deslizamiento táctil con el pulgar
+    const dpadEl = document.querySelector('.gbc-dpad');
+    if (dpadEl) {
+      let lastDpadTouchTime = 0;
+      let activeDpadDir = null;
+
+      const handleDpadTouch = (e) => {
+        if (e && e.cancelable && e.preventDefault) e.preventDefault();
+        if (!e.touches || e.touches.length === 0) return;
+        const touch = e.touches[0];
+        const rect = dpadEl.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = touch.clientX - cx;
+        const dy = touch.clientY - cy;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist < 12) {
+          activeDpadDir = null;
+          return;
+        }
+
+        let dir = null;
+        if (Math.abs(dy) > Math.abs(dx)) {
+          dir = dy < 0 ? 'up' : 'down';
+        } else {
+          dir = dx < 0 ? 'left' : 'right';
+        }
+
+        const now = Date.now();
+        if (dir !== activeDpadDir || now - lastDpadTouchTime > 180) {
+          activeDpadDir = dir;
+          lastDpadTouchTime = now;
+
+          if (dir === 'up') {
+            const btn = document.getElementById('btnUp');
+            if (btn) btn.classList.add('pressed');
+            setTimeout(() => btn && btn.classList.remove('pressed'), 120);
+            if (this.currentStage === 4 && this.stage4) {
+              if (this.stage4.comicStep === 3 && this.navigateStage4Choice) this.navigateStage4Choice(-1);
+            } else {
+              this.keys.up = true;
+            }
+          } else if (dir === 'down') {
+            const btn = document.getElementById('btnDown');
+            if (btn) btn.classList.add('pressed');
+            setTimeout(() => btn && btn.classList.remove('pressed'), 120);
+            if (this.currentStage === 4 && this.stage4) {
+              if (this.stage4.comicStep === 3 && this.navigateStage4Choice) this.navigateStage4Choice(1);
+            } else {
+              this.keys.down = true;
+            }
+          } else if (dir === 'left') {
+            if (this.currentStage === 4 && this.stage4 && this.stage4.comicStep === 3) {
+              if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
+            }
+          } else if (dir === 'right') {
+            if (this.currentStage === 4 && this.stage4) {
+              if (this.stage4.comicStep === 3) {
+                if (this.confirmStage4Choice) this.confirmStage4Choice();
+              } else {
+                if (this.advanceStage4Comic) this.advanceStage4Comic(1);
+              }
+            }
+          }
+        }
+      };
+
+      const handleDpadEnd = (e) => {
+        activeDpadDir = null;
+        this.keys.up = false;
+        this.keys.down = false;
+        this.keys.left = false;
+        this.keys.right = false;
+      };
+
+      dpadEl.addEventListener('touchstart', handleDpadTouch, { passive: false });
+      dpadEl.addEventListener('touchmove', handleDpadTouch, { passive: false });
+      dpadEl.addEventListener('touchend', handleDpadEnd, { passive: false });
+      dpadEl.addEventListener('touchcancel', handleDpadEnd, { passive: false });
+    }
+
     // Botones de acción Game Boy Color (A, B, Special, Interact, Run, Start, Select)
     bindBtn('btnJump', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
@@ -698,7 +788,7 @@ class MedellinGame {
         if (this.stage4.comicStep === 3) {
           if (this.confirmStage4Choice) this.confirmStage4Choice();
         } else {
-          this.advanceStage4Comic(1);
+          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
         }
         return;
       }
@@ -712,7 +802,7 @@ class MedellinGame {
         if (this.stage4.comicStep === 3) {
           if (this.confirmStage4Choice) this.confirmStage4Choice();
         } else {
-          this.advanceStage4Comic(1);
+          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
         }
         return;
       }
@@ -726,7 +816,7 @@ class MedellinGame {
         if (this.stage4.comicStep === 3) {
           if (this.confirmStage4Choice) this.confirmStage4Choice();
         } else {
-          this.advanceStage4Comic(1);
+          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
         }
         return;
       }
@@ -749,7 +839,7 @@ class MedellinGame {
         if (this.stage4.comicStep === 3) {
           if (this.confirmStage4Choice) this.confirmStage4Choice();
         } else {
-          this.advanceStage4Comic(1);
+          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
         }
         return;
       }
@@ -763,7 +853,7 @@ class MedellinGame {
         if (this.stage4.comicStep === 3) {
           if (this.confirmStage4Choice) this.confirmStage4Choice();
         } else {
-          this.advanceStage4Comic(1);
+          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
         }
         return;
       }
@@ -776,7 +866,7 @@ class MedellinGame {
         if (this.stage4.comicStep === 3) {
           if (this.navigateStage4Choice) this.navigateStage4Choice(1);
         } else {
-          this.advanceStage4Comic(1);
+          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
         }
         return;
       }
