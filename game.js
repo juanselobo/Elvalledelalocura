@@ -419,6 +419,15 @@ class MedellinGame {
 
       if (this.ratCutscene && this.ratCutscene.active) {
         this.advanceRatCutscene();
+        return;
+      }
+
+      if (this.currentStage === 4 && this.handleClickStage4) {
+        const rect = this.canvas.getBoundingClientRect();
+        const clickX = (e.clientX - rect.left) * (this.vWidth / rect.width);
+        const clickY = (e.clientY - rect.top) * (this.vHeight / rect.height);
+        this.handleClickStage4(clickX, clickY);
+        return;
       }
     });
 
@@ -429,13 +438,6 @@ class MedellinGame {
           this.switchStage(4);
           return;
         }
-      }
-      if (this.currentStage === 4 && this.handleClickStage4) {
-        const rect = this.canvas.getBoundingClientRect();
-        const clickX = (e.clientX - rect.left) * (this.vWidth / rect.width);
-        const clickY = (e.clientY - rect.top) * (this.vHeight / rect.height);
-        this.handleClickStage4(clickX, clickY);
-        return;
       }
     });
 
@@ -470,7 +472,7 @@ class MedellinGame {
         } else if (this.stage4.comicStep === 3) {
           // Paso 3: Diálogo interactivo con el Agente de Tránsito
           if (this.stage4.gameOver) {
-            if (k === ' ' || k === 'enter' || k === 'f' || k === 'q' || k === 'e' || k === 'z' || k === 'x' || k === 'c' || k === 'j' || k === 'k') {
+            if (k === ' ' || k === 'enter' || k === 'f' || k === 'q' || k === 'e' || k === 'z' || k === 'x' || k === 'c' || k === 'j' || k === 'k' || k === 'arrowright' || k === 'd') {
               if (this.confirmStage4Choice) this.confirmStage4Choice();
               return;
             }
@@ -481,7 +483,7 @@ class MedellinGame {
             if (k === '3') { this.selectStage4Choice(2); return; }
             if (k === '4') { this.selectStage4Choice(3); return; }
 
-            // Navegación con flechas / W / S
+            // Navegación con flechas / W / S / A
             if (k === 'arrowup' || k === 'w') {
               if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
               return;
@@ -490,9 +492,13 @@ class MedellinGame {
               if (this.navigateStage4Choice) this.navigateStage4Choice(1);
               return;
             }
+            if (k === 'arrowleft' || k === 'a') {
+              if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
+              return;
+            }
 
-            // Confirmar opción seleccionada
-            if (k === ' ' || k === 'enter' || k === 'f' || k === 'q' || k === 'e' || k === 'z' || k === 'x' || k === 'c' || k === 'j' || k === 'k') {
+            // Confirmar opción seleccionada (Flecha derecha, Enter, Espacio o botones de acción)
+            if (k === 'arrowright' || k === 'd' || k === ' ' || k === 'enter' || k === 'f' || k === 'q' || k === 'e' || k === 'z' || k === 'x' || k === 'c' || k === 'j' || k === 'k') {
               if (this.confirmStage4Choice) this.confirmStage4Choice();
               return;
             }
@@ -594,11 +600,14 @@ class MedellinGame {
       const el = document.getElementById(id);
       if (!el) return;
       let isPressed = false;
+      let lastPressTime = 0;
 
       const handleDown = (e) => {
         if (e && e.cancelable && e.type.startsWith('touch')) e.preventDefault();
-        if (isPressed) return;
+        const now = Date.now();
+        if (isPressed || (now - lastPressTime < 120)) return;
         isPressed = true;
+        lastPressTime = now;
         el.classList.add('pressed');
         if (window.retroAudio && window.retroAudio.init) { try { window.retroAudio.init(); } catch (err) {} }
         onDown();
@@ -619,7 +628,10 @@ class MedellinGame {
       el.addEventListener('mouseup', handleUp);
       el.addEventListener('mouseleave', handleUp);
       el.addEventListener('click', (e) => {
-        if (!isPressed) {
+        e.stopPropagation();
+        const now = Date.now();
+        if (!isPressed && (now - lastPressTime > 140)) {
+          lastPressTime = now;
           if (window.retroAudio && window.retroAudio.init) { try { window.retroAudio.init(); } catch (err) {} }
           onDown();
           if (onUp) onUp();
@@ -627,11 +639,15 @@ class MedellinGame {
       });
     };
 
-    // D-Pad Game Boy Color con soporte para selección de personaje y navegación de diálogo Nivel 4
+    // D-Pad Game Boy Color con soporte total para selección de personaje y navegación de diálogo Nivel 4
     bindBtn('btnLeft', () => {
       if (this.gameState === 'CHAR_SELECT') { this.selectPrevChar(); return; }
-      if (this.currentStage === 4 && this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
-        this.advanceStage4Comic(-1);
+      if (this.currentStage === 4 && this.stage4) {
+        if (this.stage4.comicStep === 3) {
+          if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
+        } else {
+          this.advanceStage4Comic(-1);
+        }
         return;
       }
       this.keys.left = true;
@@ -639,8 +655,13 @@ class MedellinGame {
 
     bindBtn('btnRight', () => {
       if (this.gameState === 'CHAR_SELECT') { this.selectNextChar(); return; }
-      if (this.currentStage === 4 && this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
-        this.advanceStage4Comic(1);
+      if (this.currentStage === 4 && this.stage4) {
+        if (this.stage4.comicStep === 3) {
+          // ▶ La flecha derecha CONFIRMA / ELIGE la opción seleccionada
+          if (this.confirmStage4Choice) this.confirmStage4Choice();
+        } else {
+          this.advanceStage4Comic(1);
+        }
         return;
       }
       this.keys.right = true;
@@ -662,7 +683,7 @@ class MedellinGame {
       this.keys.down = true;
     }, () => { this.keys.down = false; });
 
-    // Botones de acción principales Game Boy Color (A, B, Jump, etc.)
+    // Botones de acción Game Boy Color (A, B, Special, Interact, Run, Start, Select)
     bindBtn('btnJump', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
@@ -705,9 +726,15 @@ class MedellinGame {
       this.triggerSpecial();
     });
 
-    bindBtn('btnRun', () => { this.player.isDashing = !this.player.isDashing; });
+    bindBtn('btnRun', () => {
+      if (this.currentStage === 4 && this.stage4 && this.stage4.comicStep === 3) {
+        if (this.confirmStage4Choice) this.confirmStage4Choice();
+        return;
+      }
+      this.player.isDashing = !this.player.isDashing;
+    });
 
-    // Botón de ACCION / HABLAR / ACEPTAR para celular
+    // Botón de ACCIÓN / HABLAR / ACEPTAR
     bindBtn('btnInteract', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
@@ -749,9 +776,6 @@ class MedellinGame {
     });
   }
 
-  // ==========================================
-  // MOVILIDAD STREETS OF RAGE: SALTO Y RODADA VERTICAL
-  // ==========================================
   triggerJump() {
     const p = this.player;
     if (p.action === 'grab' || p.action === 'throw' || p.action === 'special' || p.action === 'hurt') return;
@@ -2358,7 +2382,7 @@ class MedellinGame {
     if (b2 && !this.prevGpButtons.b2) this.triggerAttack();
     if (b1 && !this.prevGpButtons.b1) this.triggerSpecial();
 
-    if (this.currentStage === 4 && this.stage4 && this.stage4.comicStep === 2) {
+    if (this.currentStage === 4 && this.stage4 && this.stage4.comicStep === 3) {
       if (this.keys.up && !this.prevGpButtons.up) {
         if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
       }

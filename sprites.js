@@ -341,9 +341,9 @@ class SpriteManager {
       'ending_desvalijado_bayadera': 'assets/ending_desvalijado_bayadera.png',
       'ending_soborno_empanada': 'assets/ending_soborno_empanada.png',
       'ending_embargado_simit': 'assets/ending_embargado_simit.png',
-      'comic_soterrado_1_exterior': 'assets/comic_soterrado_1_exterior.png?v=1793518500',
-      'comic_soterrado_2_mientras_tanto': 'assets/comic_soterrado_2_mientras_tanto.png?v=1793518500',
-      'comic_soterrado_3_inundado': 'assets/comic_soterrado_3_inundado.png?v=1793518500',
+      'comic_soterrado_1_exterior': 'assets/comic_soterrado_1_exterior.png',
+      'comic_soterrado_2_mientras_tanto': 'assets/comic_soterrado_2_mientras_tanto.png',
+      'comic_soterrado_3_inundado': 'assets/comic_soterrado_3_inundado.png',
       'car_taxi_flooded': 'assets/car_taxi_flooded.png',
       'car_sedan_flooded': 'assets/car_sedan_flooded.png',
       'bus_coometropol_flooded': 'assets/bus_coometropol_flooded.png',
@@ -384,11 +384,13 @@ class SpriteManager {
 
     const keys = Object.keys(assetList);
     this.totalImages = keys.length;
-    const assetVersion = 'v1.7.7';
+    const assetVersion = 'v1.7.8';
 
     keys.forEach(key => {
       const img = new Image();
-      img.src = assetList[key] + "?v=" + assetVersion;
+      const baseUrl = assetList[key];
+      const sep = baseUrl.includes('?') ? '&' : '?';
+      img.src = baseUrl + sep + "v=" + assetVersion;
       img.onload = () => {
         this.loadCount++;
         if (this.loadCount >= this.totalImages) {

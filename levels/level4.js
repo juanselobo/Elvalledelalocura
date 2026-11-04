@@ -215,6 +215,18 @@ window.Level4 = {
     return { NODES, ENDINGS };
   },
 
+  advanceStage4Comic(dir = 1) {
+    if (!this.stage4) this.initStage4Soterrado();
+    const cur = this.stage4.comicStep || 1;
+    const next = Math.max(1, Math.min(3, cur + dir));
+    this.stage4.comicStep = next;
+    if (window.retroAudio) {
+      if (next === 1 && window.retroAudio.playTransitChime) window.retroAudio.playTransitChime();
+      else if (next === 2 && window.retroAudio.playCarHorn) window.retroAudio.playCarHorn();
+      else if (next === 3 && window.retroAudio.playWaterSplash) window.retroAudio.playWaterSplash();
+    }
+  },
+
   navigateStage4Choice(dir) {
     if (!this.stage4) return;
     if (this.stage4.gameOver) return;
@@ -506,7 +518,7 @@ drawStage4Soterrado(ctx) {
       const bx = (this.vWidth - btnW) / 2;
       const by = this.vHeight - 32;
 
-      ctx.fillStyle = 'rgba(10, 8, 22, 0.88)';
+      ctx.fillStyle = 'rgba(10, 8, 22, 0.70)';
       ctx.fillRect(bx, by, btnW, btnH);
       ctx.strokeStyle = `rgba(241, 196, 15, ${pulse})`;
       ctx.lineWidth = 1.5;
@@ -516,7 +528,7 @@ drawStage4Soterrado(ctx) {
       ctx.font = '900 10px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText("▶  [ CLIC / ESPACIO ] CONTINUAR ▶", this.vWidth / 2, by + btnH / 2 + 1);
+      ctx.fillText("▶  [ CLIC / ESPACIO / D-PAD ] CONTINUAR ▶", this.vWidth / 2, by + btnH / 2 + 1);
     }
     // =========================================================================
     // IMAGEN 2: CARROS INUNDADOS Y MOTO (Limpia sin textos sobrepuestos)
@@ -537,7 +549,7 @@ drawStage4Soterrado(ctx) {
       const bx = (this.vWidth - btnW) / 2;
       const by = this.vHeight - 32;
 
-      ctx.fillStyle = 'rgba(10, 8, 22, 0.88)';
+      ctx.fillStyle = 'rgba(10, 8, 22, 0.70)';
       ctx.fillRect(bx, by, btnW, btnH);
       ctx.strokeStyle = `rgba(46, 204, 113, ${pulse})`;
       ctx.lineWidth = 1.5;
@@ -547,7 +559,7 @@ drawStage4Soterrado(ctx) {
       ctx.font = '900 10px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText("▶  [ CLIC / ESPACIO ] ENTRAR A LA CONVERSACIÓN ▶", this.vWidth / 2, by + btnH / 2 + 1);
+      ctx.fillText("▶  [ CLIC / ESPACIO / D-PAD ] ENTRAR AL DIÁLOGO ▶", this.vWidth / 2, by + btnH / 2 + 1);
     }
     // =========================================================================
     // IMAGEN 3 (DINÁMICA): EL ÁRBOL DE DECISIONES DE LA CONVERSACIÓN
@@ -560,15 +572,21 @@ drawStage4Soterrado(ctx) {
       const curNode = NODES[this.stage4.currentNodeId || 'N0'] || NODES['N0'];
       const activeMomentKey = curNode.imageKey || 'scene_soterrado_01_encuentro';
       let bgKey = isGameOver ? (this.stage4.gameOver.imageKey || 'scene_soterrado_dialogue') : activeMomentKey;
-      let bgImg = window.spriteManager.getImage(bgKey) || window.spriteManager.getImage(activeMomentKey) || window.spriteManager.getImage('scene_soterrado_dialogue');
-      if (bgImg && bgImg.complete) {
+      let bgImg = window.spriteManager.getImage(bgKey) || window.spriteManager.getImage(activeMomentKey) || window.spriteManager.getImage('scene_soterrado_dialogue') || window.spriteManager.getImage('comic_soterrado_3_inundado');
+      
+      if (bgImg && bgImg.complete && bgImg.naturalWidth !== 0) {
         ctx.drawImage(bgImg, 0, 0, this.vWidth, this.vHeight);
       } else {
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(0, 0, this.vWidth, this.vHeight);
+        const fallback = window.spriteManager.getImage('scene_soterrado_dialogue') || window.spriteManager.getImage('comic_soterrado_3_inundado');
+        if (fallback && fallback.complete && fallback.naturalWidth !== 0) {
+          ctx.drawImage(fallback, 0, 0, this.vWidth, this.vHeight);
+        } else {
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(0, 0, this.vWidth, this.vHeight);
+        }
       }
 
-      // Animaciones de fondo vivas y sutiles
+      // Animaciones de fondo vivas y sutiles (balizas, auxilio)
       if (!isGameOver) {
         this.drawStage4AmbientAnimations(ctx, time);
       }
@@ -576,22 +594,31 @@ drawStage4Soterrado(ctx) {
       // Si es Game Over o Éxito
       if (isGameOver) {
         const go = this.stage4.gameOver;
-        const pY = 200;
-        const pH = 150;
-        ctx.fillStyle = 'rgba(8, 6, 18, 0.65)';
+        const pY = 194;
+        const pH = 158;
+
+        // Fondo verdaderamente translúcido para apreciar la escena
+        const gradGo = ctx.createLinearGradient(0, pY, 0, pY + pH);
+        gradGo.addColorStop(0, 'rgba(6, 10, 24, 0.35)');
+        gradGo.addColorStop(1, 'rgba(10, 14, 32, 0.48)');
+        ctx.fillStyle = gradGo;
         ctx.fillRect(14, pY, this.vWidth - 28, pH);
+
         ctx.strokeStyle = go.isWin ? '#2ecc71' : '#f1c40f';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 1.5;
         ctx.strokeRect(14, pY, this.vWidth - 28, pH);
 
         // Esquinas reforzadas
         ctx.fillStyle = go.isWin ? '#2ecc71' : '#f1c40f';
-        ctx.fillRect(14, pY, 5, 5);
-        ctx.fillRect(14 + this.vWidth - 28 - 5, pY, 5, 5);
-        ctx.fillRect(14, pY + pH - 5, 5, 5);
-        ctx.fillRect(14 + this.vWidth - 28 - 5, pY + pH - 5, 5, 5);
+        ctx.fillRect(14, pY, 4, 4);
+        ctx.fillRect(14 + this.vWidth - 28 - 4, pY, 4, 4);
+        ctx.fillRect(14, pY + pH - 4, 4, 4);
+        ctx.fillRect(14 + this.vWidth - 28 - 4, pY + pH - 4, 4, 4);
 
-        // Subtítulo
+        // Subtítulo con sombra
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+        ctx.shadowBlur = 4;
         ctx.fillStyle = go.isWin ? '#2ecc71' : '#f39c12';
         ctx.font = '900 12px monospace';
         ctx.textAlign = 'center';
@@ -601,13 +628,14 @@ drawStage4Soterrado(ctx) {
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 11px sans-serif';
         ctx.textAlign = 'left';
-        this.wrapText(ctx, go.desc, 28, pY + 40, this.vWidth - 56, 16);
+        this.wrapText(ctx, go.desc, 28, pY + 38, this.vWidth - 56, 15);
+        ctx.restore();
 
         // Botón de acción (Reintentar o Continuar)
         const btnW = 340;
-        const btnH = 28;
+        const btnH = 26;
         const btnX = (this.vWidth - btnW) / 2;
-        const btnY = pY + pH - 36;
+        const btnY = pY + pH - 34;
         const pulse = Math.sin(time / 140) * 0.2 + 0.8;
 
         ctx.fillStyle = go.isWin ? `rgba(46, 204, 113, ${pulse})` : `rgba(231, 76, 60, ${pulse})`;
@@ -620,7 +648,7 @@ drawStage4Soterrado(ctx) {
         ctx.font = '900 10.5px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const label = go.isWin ? "▶  [ ENTER / CLIC ] INICIAR PARKOUR DE TECHOS 🌊" : "🔄  [ ENTER / CLIC ] PROBAR OTRA DECISIÓN 🔁";
+        const label = go.isWin ? "▶  [ ENTER / CLIC / D-PAD ] INICIAR PARKOUR DE TECHOS 🌊" : "🔄  [ ENTER / CLIC / D-PAD ] PROBAR OTRA DECISIÓN 🔁";
         ctx.fillText(label, btnX + btnW / 2, btnY + btnH / 2);
 
         this.stage4._restartBtn = { x: btnX, y: btnY, w: btnW, h: btnH };
@@ -629,27 +657,33 @@ drawStage4Soterrado(ctx) {
         // MODO NODO DE DIÁLOGO ACTIVO
         const node = NODES[this.stage4.currentNodeId || 'N0'] || NODES['N0'];
         
-        // Caja de Diálogo Ampliada para Máxima Legibilidad
+        // Caja de Diálogo Ultratranslúcida (Permite ver el fondo, personajes y carros)
         const boxX = 12;
-        const boxY = 176;
+        const boxY = 192;
         const boxW = this.vWidth - 24;
-        const boxH = 176;
+        const boxH = 160;
 
-        ctx.fillStyle = 'rgba(8, 6, 18, 0.62)';
+        // Fondo degradado sutil con solo 30%-40% de opacidad para total visibilidad del arte
+        const bgGrad = ctx.createLinearGradient(0, boxY, 0, boxY + boxH);
+        bgGrad.addColorStop(0, 'rgba(6, 10, 24, 0.30)');
+        bgGrad.addColorStop(1, 'rgba(8, 12, 28, 0.42)');
+        ctx.fillStyle = bgGrad;
         ctx.fillRect(boxX, boxY, boxW, boxH);
-        ctx.strokeStyle = '#f1c40f';
+
+        // Borde dorado arcade brillante
+        ctx.strokeStyle = 'rgba(241, 196, 15, 0.85)';
         ctx.lineWidth = 1.5;
         ctx.strokeRect(boxX, boxY, boxW, boxH);
 
         // Esquinas doradas
         ctx.fillStyle = '#f1c40f';
-        ctx.fillRect(boxX, boxY, 5, 5);
-        ctx.fillRect(boxX + boxW - 5, boxY, 5, 5);
-        ctx.fillRect(boxX, boxY + boxH - 5, 5, 5);
-        ctx.fillRect(boxX + boxW - 5, boxY + boxH - 5, 5, 5);
+        ctx.fillRect(boxX, boxY, 4, 4);
+        ctx.fillRect(boxX + boxW - 4, boxY, 4, 4);
+        ctx.fillRect(boxX, boxY + boxH - 4, 4, 4);
+        ctx.fillRect(boxX + boxW - 4, boxY + boxH - 4, 4, 4);
 
         // 1. Etiqueta del interlocutor (Izquierda)
-        ctx.fillStyle = 'rgba(241, 196, 15, 0.18)';
+        ctx.fillStyle = 'rgba(241, 196, 15, 0.25)';
         ctx.fillRect(boxX + 10, boxY + 6, 260, 16);
         ctx.strokeStyle = '#f1c40f';
         ctx.lineWidth = 1;
@@ -667,24 +701,31 @@ drawStage4Soterrado(ctx) {
         ctx.fillStyle = '#f1c40f';
         ctx.font = 'bold 9px monospace';
         ctx.textAlign = 'right';
-        ctx.fillText("🎮 [▲/▼ o W/S] Mover | [ENTER/CLIC] Elegir", boxX + boxW - 16, boxY + 14);
+        ctx.fillText("🎮 [▲/▼] Mover | [▶/ENTER/A] Elegir", boxX + boxW - 16, boxY + 14);
 
-        // 2. Texto del Diálogo con sombra
+        // 2. Texto del Diálogo con sombra negra de alto contraste (para perfecta lectura sobre fondo translúcido)
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 1;
+
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 10.5px sans-serif';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        const lineH = 14;
-        const textLines = this.wrapText(ctx, node.text, boxX + 12, boxY + 26, boxW - 24, lineH);
+        const lineH = 13.5;
+        const textLines = this.wrapText(ctx, node.text, boxX + 12, boxY + 25, boxW - 24, lineH);
+        ctx.restore();
         
-        // 3. Botones de Selección Múltiple
+        // 3. Botones de Selección Múltiple Translúcidos
         this.stage4._choiceButtons = [];
         const choices = node.choices || [];
         const numChoices = choices.length;
-        const choicesStartY = boxY + 26 + textLines * lineH + 6;
-        const availableH = (boxY + boxH - 6) - choicesStartY;
-        const btnGap = 4;
-        const btnH = Math.min(23, Math.max(18, Math.floor((availableH - (numChoices - 1) * btnGap) / numChoices)));
+        const choicesStartY = boxY + 25 + textLines * lineH + 5;
+        const availableH = (boxY + boxH - 5) - choicesStartY;
+        const btnGap = 3.5;
+        const btnH = Math.min(22, Math.max(17, Math.floor((availableH - (numChoices - 1) * btnGap) / numChoices)));
 
         choices.forEach((ch, idx) => {
           const cy = choicesStartY + idx * (btnH + btnGap);
@@ -692,10 +733,10 @@ drawStage4Soterrado(ctx) {
 
           // Fondo del botón
           if (isSelected) {
-            ctx.fillStyle = 'rgba(241, 196, 15, 0.40)';
+            ctx.fillStyle = 'rgba(241, 196, 15, 0.35)';
             ctx.fillRect(boxX + 10, cy, boxW - 20, btnH);
             ctx.strokeStyle = '#f1c40f';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 1.5;
             ctx.strokeRect(boxX + 10, cy, boxW - 20, btnH);
 
             // Flecha arcade pulsante
@@ -706,16 +747,16 @@ drawStage4Soterrado(ctx) {
             ctx.textBaseline = 'middle';
             ctx.fillText("▶", boxX + 14 + arrowBounce, cy + btnH / 2);
           } else {
-            ctx.fillStyle = 'rgba(16, 12, 30, 0.55)';
+            ctx.fillStyle = 'rgba(8, 12, 26, 0.26)';
             ctx.fillRect(boxX + 10, cy, boxW - 20, btnH);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
             ctx.lineWidth = 1;
             ctx.strokeRect(boxX + 10, cy, boxW - 20, btnH);
           }
 
           // Badge de número [1], [2], [3], [4]
           const badgeX = isSelected ? boxX + 28 : boxX + 16;
-          ctx.fillStyle = isSelected ? '#f1c40f' : 'rgba(255, 255, 255, 0.15)';
+          ctx.fillStyle = isSelected ? '#f1c40f' : 'rgba(255, 255, 255, 0.18)';
           ctx.fillRect(badgeX, cy + 2, 18, btnH - 4);
           ctx.fillStyle = isSelected ? '#000000' : '#f1c40f';
           ctx.font = '900 9.5px monospace';
@@ -723,12 +764,19 @@ drawStage4Soterrado(ctx) {
           ctx.textBaseline = 'middle';
           ctx.fillText(`[${idx + 1}]`, badgeX + 9, cy + btnH / 2);
 
-          // Texto de la opción
-          ctx.fillStyle = isSelected ? '#ffffff' : '#dcdde1';
+          // Texto de la opción con sombra protectora
+          ctx.save();
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+          ctx.shadowBlur = 3;
+          ctx.shadowOffsetX = 1;
+          ctx.shadowOffsetY = 1;
+
+          ctx.fillStyle = isSelected ? '#ffffff' : '#e6e6e6';
           ctx.font = isSelected ? '900 10px monospace' : 'bold 9.5px monospace';
           ctx.textAlign = 'left';
           ctx.textBaseline = 'middle';
           ctx.fillText(ch.text, badgeX + 24, cy + btnH / 2);
+          ctx.restore();
 
           this.stage4._choiceButtons.push({
             x: boxX + 10,
@@ -745,6 +793,7 @@ drawStage4Soterrado(ctx) {
   },
 
   wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    if (!text) return 0;
     const words = text.split(' ');
     let line = '';
     let lineCount = 0;
@@ -763,11 +812,6 @@ drawStage4Soterrado(ctx) {
     }
     ctx.fillText(line, x, y + lineCount * lineHeight);
     return lineCount + 1;
-  },
-
-
-  advanceFloodedCutscene() {
-    this.switchStage(4);
   },
 
   drawFloodedSoterradoCutscene(ctx) {
