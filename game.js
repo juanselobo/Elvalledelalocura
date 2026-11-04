@@ -595,25 +595,25 @@ class MedellinGame {
   }
 
   setupTouchControls() {
+    const isPointerSupported = typeof window !== 'undefined' && 'PointerEvent' in window;
+
     const bindBtn = (id, onDown, onUp) => {
       const el = document.getElementById(id);
       if (!el) return;
-      let lastPressTime = 0;
+      let isPressed = false;
 
       const triggerPress = (e) => {
         if (e) {
           if (e.cancelable && e.preventDefault) e.preventDefault();
           if (e.stopPropagation) e.stopPropagation();
         }
-        const now = Date.now();
-        if (now - lastPressTime < 60) return; // Anti-rebote
-        lastPressTime = now;
-
+        if (isPressed) return;
+        isPressed = true;
         el.classList.add('pressed');
         if (window.retroAudio && window.retroAudio.init) {
           try { window.retroAudio.init(); } catch (err) {}
         }
-        onDown();
+        if (onDown) onDown();
       };
 
       const triggerRelease = (e) => {
@@ -621,43 +621,69 @@ class MedellinGame {
           if (e.cancelable && e.preventDefault) e.preventDefault();
           if (e.stopPropagation) e.stopPropagation();
         }
+        if (!isPressed) return;
+        isPressed = false;
         el.classList.remove('pressed');
         if (onUp) onUp();
       };
 
-      // 1. Soporte Touch directo nativo (Fundamental para celulares iOS / Android)
+      // 1. Pointer events (móviles modernos, stylus y desktop)
+      el.addEventListener('pointerdown', triggerPress, { passive: false });
+      el.addEventListener('pointerup', triggerRelease, { passive: false });
+      el.addEventListener('pointercancel', triggerRelease, { passive: false });
+      el.addEventListener('pointerleave', triggerRelease, { passive: false });
+
+      // 2. Touch events directos (para compatibilidad universal en iOS/Android)
       el.addEventListener('touchstart', triggerPress, { passive: false });
       el.addEventListener('touchend', triggerRelease, { passive: false });
       el.addEventListener('touchcancel', triggerRelease, { passive: false });
 
-      // 2. Soporte Pointer Events (para stylus y dispositivos híbridos)
-      el.addEventListener('pointerdown', (e) => {
-        if (e.pointerType !== 'touch') triggerPress(e);
-      });
-      el.addEventListener('pointerup', (e) => {
-        if (e.pointerType !== 'touch') triggerRelease(e);
-      });
-      el.addEventListener('pointerleave', triggerRelease);
-      el.addEventListener('pointercancel', triggerRelease);
-
-      // 3. Soporte Ratón Desktop
-      el.addEventListener('mousedown', (e) => triggerPress(e));
+      // 3. Mouse events directos (PC y laptops)
+      el.addEventListener('mousedown', triggerPress);
       el.addEventListener('mouseup', triggerRelease);
       el.addEventListener('mouseleave', triggerRelease);
 
-      // 4. Click de respaldo con anti-rebote
+      // Bloquear click y menú contextual para evitar doble ejecución sintética
       el.addEventListener('click', (e) => {
-        triggerPress(e);
+        if (e.cancelable && e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+      });
+      el.addEventListener('contextmenu', (e) => {
+        if (e.cancelable && e.preventDefault) e.preventDefault();
       });
     };
 
-    // D-Pad Game Boy Color (Navegación limpia sin retroceso de cómics)
+    // D-Pad Game Boy Color (Cruceta de navegación)
+    bindBtn('btnUp', () => {
+      if (this.gameState === 'CHAR_SELECT') { this.selectPrevChar(); return; }
+      if (this.currentStage === 4) {
+        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
+          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
+          return;
+        }
+        if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
+        return;
+      }
+      this.keys.up = true;
+    }, () => { this.keys.up = false; });
+
+    bindBtn('btnDown', () => {
+      if (this.gameState === 'CHAR_SELECT') { this.selectNextChar(); return; }
+      if (this.currentStage === 4) {
+        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
+          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
+          return;
+        }
+        if (this.navigateStage4Choice) this.navigateStage4Choice(1);
+        return;
+      }
+      this.keys.down = true;
+    }, () => { this.keys.down = false; });
+
     bindBtn('btnLeft', () => {
       if (this.gameState === 'CHAR_SELECT') { this.selectPrevChar(); return; }
-      if (this.currentStage === 4 && this.stage4) {
-        if (this.stage4.comicStep === 3) {
-          if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
-        }
+      if (this.currentStage === 4) {
+        // En Nivel 4 no retroceder
         return;
       }
       this.keys.left = true;
@@ -665,40 +691,18 @@ class MedellinGame {
 
     bindBtn('btnRight', () => {
       if (this.gameState === 'CHAR_SELECT') { this.selectNextChar(); return; }
-      if (this.currentStage === 4 && this.stage4) {
-        if (this.stage4.comicStep === 3) {
-          // Flecha derecha confirma la opción
-          if (this.confirmStage4Choice) this.confirmStage4Choice();
-        } else {
-          // Avanzar viñeta hacia adelante
+      if (this.currentStage === 4) {
+        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
           if (this.advanceStage4Comic) this.advanceStage4Comic(1);
+        } else {
+          if (this.confirmStage4Choice) this.confirmStage4Choice();
         }
         return;
       }
       this.keys.right = true;
     }, () => { this.keys.right = false; this.player.isDashing = false; });
 
-    bindBtn('btnUp', () => {
-      if (this.currentStage === 4 && this.stage4) {
-        if (this.stage4.comicStep === 3) {
-          if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
-          return;
-        }
-      }
-      this.keys.up = true;
-    }, () => { this.keys.up = false; });
-
-    bindBtn('btnDown', () => {
-      if (this.currentStage === 4 && this.stage4) {
-        if (this.stage4.comicStep === 3) {
-          if (this.navigateStage4Choice) this.navigateStage4Choice(1);
-          return;
-        }
-      }
-      this.keys.down = true;
-    }, () => { this.keys.down = false; });
-
-    // D-Pad Touch Container: Soporte para deslizamiento táctil con el pulgar
+    // D-Pad Touch Container: Soporte para deslizamiento táctil con el pulgar en el contenedor
     const dpadEl = document.querySelector('.gbc-dpad');
     if (dpadEl) {
       let lastDpadTouchTime = 0;
@@ -706,6 +710,8 @@ class MedellinGame {
 
       const handleDpadTouch = (e) => {
         if (e && e.cancelable && e.preventDefault) e.preventDefault();
+        // Si el toque fue directamente sobre uno de los botones, dejar que bindBtn lo procese exclusivamente
+        if (e.target && e.target.closest && e.target.closest('.gbc-dpad-btn')) return;
         if (!e.touches || e.touches.length === 0) return;
         const touch = e.touches[0];
         const rect = dpadEl.getBoundingClientRect();
@@ -715,7 +721,7 @@ class MedellinGame {
         const dy = touch.clientY - cy;
         const dist = Math.hypot(dx, dy);
 
-        if (dist < 12) {
+        if (dist < 10) {
           activeDpadDir = null;
           return;
         }
@@ -734,33 +740,31 @@ class MedellinGame {
 
           if (dir === 'up') {
             const btn = document.getElementById('btnUp');
-            if (btn) btn.classList.add('pressed');
-            setTimeout(() => btn && btn.classList.remove('pressed'), 120);
-            if (this.currentStage === 4 && this.stage4) {
-              if (this.stage4.comicStep === 3 && this.navigateStage4Choice) this.navigateStage4Choice(-1);
+            if (btn) { btn.classList.add('pressed'); setTimeout(() => btn && btn.classList.remove('pressed'), 120); }
+            if (this.currentStage === 4) {
+              if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
             } else {
               this.keys.up = true;
             }
           } else if (dir === 'down') {
             const btn = document.getElementById('btnDown');
-            if (btn) btn.classList.add('pressed');
-            setTimeout(() => btn && btn.classList.remove('pressed'), 120);
-            if (this.currentStage === 4 && this.stage4) {
-              if (this.stage4.comicStep === 3 && this.navigateStage4Choice) this.navigateStage4Choice(1);
+            if (btn) { btn.classList.add('pressed'); setTimeout(() => btn && btn.classList.remove('pressed'), 120); }
+            if (this.currentStage === 4) {
+              if (this.navigateStage4Choice) this.navigateStage4Choice(1);
             } else {
               this.keys.down = true;
             }
           } else if (dir === 'left') {
-            if (this.currentStage === 4 && this.stage4 && this.stage4.comicStep === 3) {
-              if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
-            }
+            if (this.currentStage !== 4) this.keys.left = true;
           } else if (dir === 'right') {
-            if (this.currentStage === 4 && this.stage4) {
-              if (this.stage4.comicStep === 3) {
-                if (this.confirmStage4Choice) this.confirmStage4Choice();
-              } else {
+            if (this.currentStage === 4) {
+              if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
                 if (this.advanceStage4Comic) this.advanceStage4Comic(1);
+              } else {
+                if (this.confirmStage4Choice) this.confirmStage4Choice();
               }
+            } else {
+              this.keys.right = true;
             }
           }
         }
@@ -784,11 +788,11 @@ class MedellinGame {
     bindBtn('btnJump', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
-      if (this.currentStage === 4 && this.stage4) {
-        if (this.stage4.comicStep === 3) {
-          if (this.confirmStage4Choice) this.confirmStage4Choice();
-        } else {
+      if (this.currentStage === 4) {
+        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
           if (this.advanceStage4Comic) this.advanceStage4Comic(1);
+        } else {
+          if (this.confirmStage4Choice) this.confirmStage4Choice();
         }
         return;
       }
@@ -798,11 +802,11 @@ class MedellinGame {
     bindBtn('btnPunch', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
-      if (this.currentStage === 4 && this.stage4) {
-        if (this.stage4.comicStep === 3) {
-          if (this.confirmStage4Choice) this.confirmStage4Choice();
-        } else {
+      if (this.currentStage === 4) {
+        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
           if (this.advanceStage4Comic) this.advanceStage4Comic(1);
+        } else {
+          if (this.confirmStage4Choice) this.confirmStage4Choice();
         }
         return;
       }
@@ -812,11 +816,11 @@ class MedellinGame {
     bindBtn('btnKick', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
-      if (this.currentStage === 4 && this.stage4) {
-        if (this.stage4.comicStep === 3) {
-          if (this.confirmStage4Choice) this.confirmStage4Choice();
-        } else {
+      if (this.currentStage === 4) {
+        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
           if (this.advanceStage4Comic) this.advanceStage4Comic(1);
+        } else {
+          if (this.confirmStage4Choice) this.confirmStage4Choice();
         }
         return;
       }
@@ -824,8 +828,12 @@ class MedellinGame {
     });
 
     bindBtn('btnRun', () => {
-      if (this.currentStage === 4 && this.stage4 && this.stage4.comicStep === 3) {
-        if (this.confirmStage4Choice) this.confirmStage4Choice();
+      if (this.currentStage === 4) {
+        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
+          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
+        } else {
+          if (this.confirmStage4Choice) this.confirmStage4Choice();
+        }
         return;
       }
       this.player.isDashing = !this.player.isDashing;
@@ -835,11 +843,11 @@ class MedellinGame {
     bindBtn('btnInteract', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
-      if (this.currentStage === 4 && this.stage4) {
-        if (this.stage4.comicStep === 3) {
-          if (this.confirmStage4Choice) this.confirmStage4Choice();
-        } else {
+      if (this.currentStage === 4) {
+        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
           if (this.advanceStage4Comic) this.advanceStage4Comic(1);
+        } else {
+          if (this.confirmStage4Choice) this.confirmStage4Choice();
         }
         return;
       }
@@ -849,11 +857,11 @@ class MedellinGame {
     bindBtn('btnStart', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
-      if (this.currentStage === 4 && this.stage4) {
-        if (this.stage4.comicStep === 3) {
-          if (this.confirmStage4Choice) this.confirmStage4Choice();
-        } else {
+      if (this.currentStage === 4) {
+        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
           if (this.advanceStage4Comic) this.advanceStage4Comic(1);
+        } else {
+          if (this.confirmStage4Choice) this.confirmStage4Choice();
         }
         return;
       }
@@ -862,18 +870,18 @@ class MedellinGame {
 
     bindBtn('btnSelect', () => {
       if (this.gameState === 'CHAR_SELECT') { this.selectNextChar(); return; }
-      if (this.currentStage === 4 && this.stage4) {
-        if (this.stage4.comicStep === 3) {
-          if (this.navigateStage4Choice) this.navigateStage4Choice(1);
-        } else {
+      if (this.currentStage === 4) {
+        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
           if (this.advanceStage4Comic) this.advanceStage4Comic(1);
+        } else {
+          if (this.navigateStage4Choice) this.navigateStage4Choice(1);
         }
         return;
       }
     });
   }
 
-  triggerJump() {
+    triggerJump() {
     const p = this.player;
     if (p.action === 'grab' || p.action === 'throw' || p.action === 'special' || p.action === 'hurt') return;
 

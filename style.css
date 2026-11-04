@@ -48,7 +48,7 @@ body {
   cursor: pointer;
   transition: all 0.1s ease;
   box-shadow: 0 3px 0 #120b22;
-  touch-action: manipulation;
+  touch-action: none;
 }
 
 .gbc-top-btn:active {
@@ -295,6 +295,7 @@ body {
 }
 
 .gbc-dpad-center {
+  pointer-events: none;
   grid-column: 2;
   grid-row: 2;
   background: #1c1d24;
