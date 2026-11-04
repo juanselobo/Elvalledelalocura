@@ -457,18 +457,15 @@ class MedellinGame {
         }
       }
 
-      // Nivel 4: Manejo de cómic y diálogo interactivo
+      // Nivel 4: Manejo de cómic y diálogo interactivo (Sin retroceso de cómics)
       if (this.currentStage === 4 && this.stage4) {
-        // En los pasos 1 y 2 (aérea e interior con moto): avanzar con cualquier tecla de acción
         if (this.stage4.comicStep === 1 || this.stage4.comicStep === 2) {
-          if (k === ' ' || k === 'enter' || k === 'f' || k === 'c' || k === 'arrowright' || k === 'd') {
-            this.advanceStage4Comic(1);
+          // Cualquier tecla de acción o avance pasa a la siguiente viñeta (NUNCA retroceder)
+          if (k === ' ' || k === 'enter' || k === 'f' || k === 'c' || k === 'arrowright' || k === 'd' || k === 'q' || k === 'e' || k === 'j' || k === 'k' || k === 'z' || k === 'x') {
+            if (this.advanceStage4Comic) this.advanceStage4Comic(1);
             return;
           }
-          if (k === 'arrowleft' || k === 'a') {
-            this.advanceStage4Comic(-1);
-            return;
-          }
+          return;
         } else if (this.stage4.comicStep === 3) {
           // Paso 3: Diálogo interactivo con el Agente de Tránsito
           if (this.stage4.gameOver) {
@@ -483,21 +480,23 @@ class MedellinGame {
             if (k === '3') { this.selectStage4Choice(2); return; }
             if (k === '4') { this.selectStage4Choice(3); return; }
 
-            // Navegación con flechas / W / S / A
+            // Mover arriba: ArrowUp, W
             if (k === 'arrowup' || k === 'w') {
               if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
               return;
             }
+            // Mover abajo: ArrowDown, S
             if (k === 'arrowdown' || k === 's') {
               if (this.navigateStage4Choice) this.navigateStage4Choice(1);
               return;
             }
+            // Mover arriba con izquierda: ArrowLeft, A
             if (k === 'arrowleft' || k === 'a') {
               if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
               return;
             }
 
-            // Confirmar opción seleccionada (Flecha derecha, Enter, Espacio o botones de acción)
+            // Confirmar / Elegir opción: ArrowRight, D, Enter, Espacio, F, Q, E, Z, X, C, J, K
             if (k === 'arrowright' || k === 'd' || k === ' ' || k === 'enter' || k === 'f' || k === 'q' || k === 'e' || k === 'z' || k === 'x' || k === 'c' || k === 'j' || k === 'k') {
               if (this.confirmStage4Choice) this.confirmStage4Choice();
               return;
@@ -599,55 +598,58 @@ class MedellinGame {
     const bindBtn = (id, onDown, onUp) => {
       const el = document.getElementById(id);
       if (!el) return;
-      let isPressed = false;
       let lastPressTime = 0;
 
-      const handleDown = (e) => {
-        if (e && e.cancelable && e.type.startsWith('touch')) e.preventDefault();
+      const press = (e) => {
+        if (e) {
+          if (e.cancelable && e.preventDefault) e.preventDefault();
+          if (e.stopPropagation) e.stopPropagation();
+        }
         const now = Date.now();
-        if (isPressed || (now - lastPressTime < 120)) return;
-        isPressed = true;
+        if (now - lastPressTime < 50) return; // anti-rebote simple
         lastPressTime = now;
         el.classList.add('pressed');
         if (window.retroAudio && window.retroAudio.init) { try { window.retroAudio.init(); } catch (err) {} }
         onDown();
       };
 
-      const handleUp = (e) => {
-        if (e && e.cancelable && e.type.startsWith('touch')) e.preventDefault();
-        if (!isPressed) return;
-        isPressed = false;
+      const release = (e) => {
+        if (e) {
+          if (e.cancelable && e.preventDefault) e.preventDefault();
+          if (e.stopPropagation) e.stopPropagation();
+        }
         el.classList.remove('pressed');
         if (onUp) onUp();
       };
 
-      el.addEventListener('touchstart', handleDown, { passive: false });
-      el.addEventListener('touchend', handleUp, { passive: false });
-      el.addEventListener('touchcancel', handleUp, { passive: false });
-      el.addEventListener('mousedown', handleDown);
-      el.addEventListener('mouseup', handleUp);
-      el.addEventListener('mouseleave', handleUp);
+      if (window.PointerEvent) {
+        el.addEventListener('pointerdown', press);
+        el.addEventListener('pointerup', release);
+        el.addEventListener('pointercancel', release);
+        el.addEventListener('pointerleave', release);
+      } else {
+        el.addEventListener('touchstart', press, { passive: false });
+        el.addEventListener('touchend', release, { passive: false });
+        el.addEventListener('touchcancel', release, { passive: false });
+        el.addEventListener('mousedown', press);
+        el.addEventListener('mouseup', release);
+        el.addEventListener('mouseleave', release);
+      }
+
       el.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const now = Date.now();
-        if (!isPressed && (now - lastPressTime > 140)) {
-          lastPressTime = now;
-          if (window.retroAudio && window.retroAudio.init) { try { window.retroAudio.init(); } catch (err) {} }
-          onDown();
-          if (onUp) onUp();
-        }
+        if (e.cancelable && e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
       });
     };
 
-    // D-Pad Game Boy Color con soporte total para selección de personaje y navegación de diálogo Nivel 4
+    // D-Pad Game Boy Color (Navegación limpia sin retroceso de cómics)
     bindBtn('btnLeft', () => {
       if (this.gameState === 'CHAR_SELECT') { this.selectPrevChar(); return; }
       if (this.currentStage === 4 && this.stage4) {
         if (this.stage4.comicStep === 3) {
           if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
-        } else {
-          this.advanceStage4Comic(-1);
         }
+        // NO retroceder el cómic hacia la izquierda
         return;
       }
       this.keys.left = true;
@@ -657,10 +659,11 @@ class MedellinGame {
       if (this.gameState === 'CHAR_SELECT') { this.selectNextChar(); return; }
       if (this.currentStage === 4 && this.stage4) {
         if (this.stage4.comicStep === 3) {
-          // ▶ La flecha derecha CONFIRMA / ELIGE la opción seleccionada
+          // Flecha derecha confirma la opción
           if (this.confirmStage4Choice) this.confirmStage4Choice();
         } else {
-          this.advanceStage4Comic(1);
+          // Avanzar viñeta hacia adelante
+          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
         }
         return;
       }
@@ -668,17 +671,21 @@ class MedellinGame {
     }, () => { this.keys.right = false; this.player.isDashing = false; });
 
     bindBtn('btnUp', () => {
-      if (this.currentStage === 4 && this.stage4 && this.stage4.comicStep === 3) {
-        if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
-        return;
+      if (this.currentStage === 4 && this.stage4) {
+        if (this.stage4.comicStep === 3) {
+          if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
+          return;
+        }
       }
       this.keys.up = true;
     }, () => { this.keys.up = false; });
 
     bindBtn('btnDown', () => {
-      if (this.currentStage === 4 && this.stage4 && this.stage4.comicStep === 3) {
-        if (this.navigateStage4Choice) this.navigateStage4Choice(1);
-        return;
+      if (this.currentStage === 4 && this.stage4) {
+        if (this.stage4.comicStep === 3) {
+          if (this.navigateStage4Choice) this.navigateStage4Choice(1);
+          return;
+        }
       }
       this.keys.down = true;
     }, () => { this.keys.down = false; });
@@ -3676,10 +3683,17 @@ class MedellinGame {
 // ============================================================
 // INTEGRACIÓN MODULAR DE NIVELES (LEVELS 1 - 4)
 // ============================================================
-if (typeof Level1 !== 'undefined') Object.assign(MedellinGame.prototype, Level1);
-if (typeof Level2 !== 'undefined') Object.assign(MedellinGame.prototype, Level2);
-if (typeof Level3 !== 'undefined') Object.assign(MedellinGame.prototype, Level3);
-if (typeof Level4 !== 'undefined') Object.assign(MedellinGame.prototype, Level4);
+const _l1 = (typeof Level1 !== 'undefined') ? Level1 : (typeof window !== 'undefined' ? window.Level1 : null);
+if (_l1) Object.assign(MedellinGame.prototype, _l1);
+
+const _l2 = (typeof Level2 !== 'undefined') ? Level2 : (typeof window !== 'undefined' ? window.Level2 : null);
+if (_l2) Object.assign(MedellinGame.prototype, _l2);
+
+const _l3 = (typeof Level3 !== 'undefined') ? Level3 : (typeof window !== 'undefined' ? window.Level3 : null);
+if (_l3) Object.assign(MedellinGame.prototype, _l3);
+
+const _l4 = (typeof Level4 !== 'undefined') ? Level4 : (typeof window !== 'undefined' ? window.Level4 : null);
+if (_l4) Object.assign(MedellinGame.prototype, _l4);
 
 window.addEventListener('DOMContentLoaded', () => {
   window.medellinGame = new MedellinGame();

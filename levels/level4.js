@@ -1,7 +1,7 @@
 // ============================================================
 // NIVEL 4: EL SOTERRADO INUNDADO (CÓMIC & FICO)
 // ============================================================
-window.Level4 = {
+var Level4 = window.Level4 = {
   setupLevel4() {
     this.initStage4Soterrado();
   },
@@ -215,58 +215,67 @@ window.Level4 = {
     return { NODES, ENDINGS };
   },
 
-  advanceStage4Comic(dir = 1) {
+    advanceStage4Comic(dir = 1) {
     if (!this.stage4) this.initStage4Soterrado();
     const cur = this.stage4.comicStep || 1;
-    const next = Math.max(1, Math.min(3, cur + dir));
+    // Solo permitir avanzar hacia adelante: nunca retroceder
+    const stepDir = Math.max(1, dir || 1);
+    const next = Math.max(cur, Math.min(3, cur + stepDir));
     this.stage4.comicStep = next;
     if (window.retroAudio) {
-      if (next === 1 && window.retroAudio.playTransitChime) window.retroAudio.playTransitChime();
-      else if (next === 2 && window.retroAudio.playCarHorn) window.retroAudio.playCarHorn();
+      if (next === 2 && window.retroAudio.playCarHorn) window.retroAudio.playCarHorn();
       else if (next === 3 && window.retroAudio.playWaterSplash) window.retroAudio.playWaterSplash();
     }
   },
 
-  navigateStage4Choice(dir) {
-    if (!this.stage4) return;
+  navigateStage4Choice(dir = 1) {
+    if (!this.stage4) this.initStage4Soterrado();
     if (this.stage4.gameOver) return;
     const { NODES } = this.getStage4DialogueData();
     const cur = NODES[this.stage4.currentNodeId || 'N0'] || NODES['N0'];
-    const num = (cur.choices && cur.choices.length) || 1;
-    const prev = this.stage4.selectedChoiceIndex || 0;
+    const choices = cur.choices || [];
+    const num = choices.length || 1;
+    const prev = (typeof this.stage4.selectedChoiceIndex === 'number') ? this.stage4.selectedChoiceIndex : 0;
     this.stage4.selectedChoiceIndex = (prev + dir + num) % num;
-    if (window.retroAudio && window.retroAudio.playDash) window.retroAudio.playDash();
+    if (window.retroAudio && window.retroAudio.playDash) {
+      try { window.retroAudio.playDash(); } catch (e) {}
+    }
   },
 
   confirmStage4Choice() {
-    if (!this.stage4) return;
+    if (!this.stage4) this.initStage4Soterrado();
     if (this.stage4.gameOver) {
-      if (this.stage4.gameOver.isWin) {
-        this.stage4.comicStep = 3;
-        if (window.retroAudio && window.retroAudio.playWaterSplash) window.retroAudio.playWaterSplash();
-      } else {
-        this.restartStage4Dialogue();
-      }
+      this.restartStage4Dialogue();
       return;
     }
-    this.selectStage4Choice(this.stage4.selectedChoiceIndex || 0);
+    const idx = (typeof this.stage4.selectedChoiceIndex === 'number') ? this.stage4.selectedChoiceIndex : 0;
+    this.selectStage4Choice(idx);
   },
 
-      selectStage4Choice(choiceIndex) {
-    if (!this.stage4) return;
+  selectStage4Choice(choiceIndex) {
+    if (!this.stage4) this.initStage4Soterrado();
     const { NODES, ENDINGS } = this.getStage4DialogueData();
     const cur = NODES[this.stage4.currentNodeId || 'N0'];
-    if (!cur || !cur.choices || !cur.choices[choiceIndex]) return;
+    if (!cur || !cur.choices) return;
 
-    const chosen = cur.choices[choiceIndex];
-    if (window.retroAudio && window.retroAudio.playCollect) window.retroAudio.playCollect();
+    const safeIdx = Math.max(0, Math.min(cur.choices.length - 1, choiceIndex || 0));
+    const chosen = cur.choices[safeIdx];
+    if (!chosen) return;
+
+    if (window.retroAudio && window.retroAudio.playCollect) {
+      try { window.retroAudio.playCollect(); } catch (e) {}
+    }
 
     if (chosen.next.startsWith('END_')) {
       this.stage4.gameOver = ENDINGS[chosen.next];
-      if (window.retroAudio && window.retroAudio.playHit) window.retroAudio.playHit();
+      if (window.retroAudio && window.retroAudio.playHit) {
+        try { window.retroAudio.playHit(); } catch (e) {}
+      }
     } else if (chosen.next === 'SUCCESS_PARKOUR') {
       this.stage4.gameOver = ENDINGS.SUCCESS_PARKOUR;
-      if (window.retroAudio && window.retroAudio.playFanfare) window.retroAudio.playFanfare();
+      if (window.retroAudio && window.retroAudio.playFanfare) {
+        try { window.retroAudio.playFanfare(); } catch (e) {}
+      }
     } else {
       this.stage4.currentNodeId = chosen.next;
       this.stage4.selectedChoiceIndex = 0;
@@ -274,11 +283,13 @@ window.Level4 = {
   },
 
   restartStage4Dialogue() {
-    if (!this.stage4) return;
+    if (!this.stage4) this.initStage4Soterrado();
     this.stage4.currentNodeId = 'N0';
     this.stage4.selectedChoiceIndex = 0;
     this.stage4.gameOver = null;
-    if (window.retroAudio && window.retroAudio.playTransitChime) window.retroAudio.playTransitChime();
+    if (window.retroAudio && window.retroAudio.playTransitChime) {
+      try { window.retroAudio.playTransitChime(); } catch (e) {}
+    }
   },
 
   handleMouseMoveStage4(mouseX, mouseY) {
@@ -701,7 +712,7 @@ drawStage4Soterrado(ctx) {
         ctx.fillStyle = '#f1c40f';
         ctx.font = 'bold 9px monospace';
         ctx.textAlign = 'right';
-        ctx.fillText("🎮 [▲/▼] Mover | [▶/ENTER/A] Elegir", boxX + boxW - 16, boxY + 14);
+        ctx.fillText("🎮 [▲/▼] Mover | [GOLPE/SALTO/ACCIÓN/▶] Elegir", boxX + boxW - 16, boxY + 14);
 
         // 2. Texto del Diálogo con sombra negra de alto contraste (para perfecta lectura sobre fondo translúcido)
         ctx.save();
@@ -733,23 +744,27 @@ drawStage4Soterrado(ctx) {
 
           // Fondo del botón
           if (isSelected) {
-            ctx.fillStyle = 'rgba(241, 196, 15, 0.35)';
+            ctx.save();
+            ctx.shadowColor = '#f1c40f';
+            ctx.shadowBlur = 8;
+            ctx.fillStyle = 'rgba(241, 196, 15, 0.45)';
             ctx.fillRect(boxX + 10, cy, boxW - 20, btnH);
-            ctx.strokeStyle = '#f1c40f';
-            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
             ctx.strokeRect(boxX + 10, cy, boxW - 20, btnH);
+            ctx.restore();
 
-            // Flecha arcade pulsante
-            const arrowBounce = Math.sin(time / 110) * 2;
+            // Flecha arcade dorada brillante
+            const arrowBounce = Math.sin(time / 100) * 3;
             ctx.fillStyle = '#f1c40f';
-            ctx.font = '900 11px monospace';
+            ctx.font = '900 12px monospace';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
             ctx.fillText("▶", boxX + 14 + arrowBounce, cy + btnH / 2);
           } else {
-            ctx.fillStyle = 'rgba(8, 12, 26, 0.26)';
+            ctx.fillStyle = 'rgba(6, 10, 24, 0.38)';
             ctx.fillRect(boxX + 10, cy, boxW - 20, btnH);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
             ctx.lineWidth = 1;
             ctx.strokeRect(boxX + 10, cy, boxW - 20, btnH);
           }
@@ -819,3 +834,6 @@ drawStage4Soterrado(ctx) {
   }
 
 };
+if (typeof MedellinGame !== 'undefined' && MedellinGame.prototype) {
+  Object.assign(MedellinGame.prototype, Level4);
+}
