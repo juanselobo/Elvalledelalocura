@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Aventura en MedellÃ­n: La Villa del AburrÃ¡ - Game Boy Color Edition</title>
-  <link rel="stylesheet" href="style.css?v=1793764051779">
+  <link rel="stylesheet" href="style.css?v=1793850000001">
 </head>
 <body>
 
@@ -132,13 +132,13 @@
   </div>
 
   <!-- Scripts del juego -->
-  <script src="audio.js?v=1793764051779"></script>
-  <script src="sprites.js?v=1793764051779"></script>
-  <script src="levels/level1.js?v=1793764051779"></script>
-  <script src="levels/level2.js?v=1793764051779"></script>
-  <script src="levels/level3.js?v=1793764051779"></script>
-  <script src="levels/level4.js?v=1793764051779"></script>
-  <script src="game.js?v=1793764051779"></script>
+  <script src="audio.js?v=1793850000001"></script>
+  <script src="sprites.js?v=1793850000001"></script>
+  <script src="levels/level1.js?v=1793850000001"></script>
+  <script src="levels/level2.js?v=1793850000001"></script>
+  <script src="levels/level3.js?v=1793850000001"></script>
+  <script src="levels/level4.js?v=1793850000001"></script>
+  <script src="game.js?v=1793850000001"></script>
 
   <script>
     // Selector de niveles interactivo con estado activo
@@ -150,6 +150,7 @@
     window.updateActiveStageButton = updateActiveStageButton;
 
     document.getElementById('btnStage1').addEventListener('click', function() {
+      this.blur();
       if (window.medellinGame) {
         window.medellinGame.switchStage(1);
         updateActiveStageButton(1);
@@ -157,6 +158,7 @@
     });
 
     document.getElementById('btnStage2').addEventListener('click', function() {
+      this.blur();
       if (window.medellinGame) {
         window.medellinGame.switchStage(2);
         updateActiveStageButton(2);
@@ -164,6 +166,7 @@
     });
 
     document.getElementById('btnStage3').addEventListener('click', function() {
+      this.blur();
       if (window.medellinGame) {
         window.medellinGame.switchStage(3);
         updateActiveStageButton(3);
@@ -171,6 +174,7 @@
     });
 
     document.getElementById('btnStage4').addEventListener('click', function() {
+      this.blur();
       if (window.medellinGame) {
         window.medellinGame.switchStage(4);
         updateActiveStageButton(4);

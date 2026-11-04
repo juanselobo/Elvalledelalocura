@@ -16,4 +16,4 @@ echo.
 echo Presiona Ctrl+C en esta ventana para detener el servidor cuando termines.
 echo ===================================================================
 echo.
-python -m http.server 8000
+python -c "import http.server, socketserver; h = type('NoCache', (http.server.SimpleHTTPRequestHandler,), {'end_headers': lambda s: (s.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0'), http.server.SimpleHTTPRequestHandler.end_headers(s))}); socketserver.TCPServer(('', 8000), h).serve_forever()"

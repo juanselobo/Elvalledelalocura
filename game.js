@@ -445,7 +445,15 @@ class MedellinGame {
       if (window.retroAudio && window.retroAudio.init) {
         try { window.retroAudio.init(); } catch (err) {}
       }
-      const k = e.key.toLowerCase();
+      const k = e.key ? e.key.toLowerCase() : '';
+
+      // Evitar que las teclas del juego activen botones HTML con foco (ej. botón NIVEL 4) o hagan scroll
+      if (k === 'arrowup' || k === 'arrowdown' || k === 'arrowleft' || k === 'arrowright' || k === ' ' || k === 'enter') {
+        if (e.cancelable) e.preventDefault();
+        if (document.activeElement && document.activeElement.tagName === 'BUTTON') {
+          document.activeElement.blur();
+        }
+      }
 
       // Nivel 3: Victoria final de la rata -> Pasar a Nivel 4 con cualquier tecla de avance
       if (this.currentStage === 3 && this.canal && this.canal.climax) {
@@ -457,52 +465,59 @@ class MedellinGame {
         }
       }
 
-      // Nivel 4: Manejo de cómic y diálogo interactivo (Sin retroceso de cómics)
-      if (this.currentStage === 4 && this.stage4) {
-        if (this.stage4.comicStep === 1 || this.stage4.comicStep === 2) {
-          // Cualquier tecla de acción o avance pasa a la siguiente viñeta (NUNCA retroceder)
-          if (k === ' ' || k === 'enter' || k === 'f' || k === 'c' || k === 'arrowright' || k === 'd' || k === 'q' || k === 'e' || k === 'j' || k === 'k' || k === 'z' || k === 'x') {
-            if (this.advanceStage4Comic) this.advanceStage4Comic(1);
+      // Nivel 4: Manejo de fotogramas de historia y diálogo interactivo
+      if (this.currentStage === 4) {
+        if (!this.stage4 && this.initStage4Soterrado) {
+          this.initStage4Soterrado();
+        }
+        if (this.stage4) {
+          if (this.stage4.comicStep === 1 || this.stage4.comicStep === 2) {
+            // Solo avanzar fotogramas con la tecla de golpe o de acción (nunca con las flechas / cruceta)
+            if (k === 'q' || k === 'j' || k === 'z' || k === 'f' || k === 'enter' || k === ' ') {
+              if (this.advanceStage4Comic) this.advanceStage4Comic(1);
+            }
+            return;
+          } else if (this.stage4.comicStep === 3) {
+            // Paso 3: Diálogo interactivo con el Agente de Tránsito
+            if (this.stage4.gameOver) {
+              if (k === 'q' || k === 'j' || k === 'z' || k === 'f' || k === 'enter' || k === ' ') {
+                if (this.confirmStage4Choice) this.confirmStage4Choice();
+              }
+              return;
+            } else {
+              // Mover arriba para elegir respuesta: Flecha Arriba o W
+              if (k === 'arrowup' || k === 'w') {
+                if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
+                return;
+              }
+              // Mover abajo para elegir respuesta: Flecha Abajo o S
+              if (k === 'arrowdown' || k === 's') {
+                if (this.navigateStage4Choice) this.navigateStage4Choice(1);
+                return;
+              }
+              // Flechas izquierda y derecha no hacen nada en el Nivel 4
+              if (k === 'arrowleft' || k === 'arrowright' || k === 'a' || k === 'd') {
+                return;
+              }
+              // Confirmar / Elegir respuesta con tecla de golpe o de acción
+              if (k === 'q' || k === 'j' || k === 'z' || k === 'f' || k === 'enter' || k === ' ') {
+                if (this.confirmStage4Choice) this.confirmStage4Choice();
+                return;
+              }
+              // Teclas numéricas directas 1, 2, 3, 4 para las respuestas
+              if (k === '1') { this.selectStage4Choice(0); return; }
+              if (k === '2') { this.selectStage4Choice(1); return; }
+              if (k === '3') { this.selectStage4Choice(2); return; }
+              if (k === '4') { this.selectStage4Choice(3); return; }
+            }
+            if (k === 'm') {
+              const playing = window.retroAudio.toggleBgm();
+              this.addFloatingText(this.player.x, this.player.z - 100, playing ? "MÚSICA: ON" : "MÚSICA: OFF", "#f1c40f");
+            }
             return;
           }
-          return;
-        } else if (this.stage4.comicStep === 3) {
-          // Paso 3: Diálogo interactivo con el Agente de Tránsito
-          if (this.stage4.gameOver) {
-            if (k === ' ' || k === 'enter' || k === 'f' || k === 'q' || k === 'e' || k === 'z' || k === 'x' || k === 'c' || k === 'j' || k === 'k' || k === 'arrowright' || k === 'd') {
-              if (this.confirmStage4Choice) this.confirmStage4Choice();
-              return;
-            }
-          } else {
-            // Teclas numéricas directas 1, 2, 3, 4
-            if (k === '1') { this.selectStage4Choice(0); return; }
-            if (k === '2') { this.selectStage4Choice(1); return; }
-            if (k === '3') { this.selectStage4Choice(2); return; }
-            if (k === '4') { this.selectStage4Choice(3); return; }
-
-            // Mover arriba: ArrowUp, W
-            if (k === 'arrowup' || k === 'w') {
-              if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
-              return;
-            }
-            // Mover abajo: ArrowDown, S
-            if (k === 'arrowdown' || k === 's') {
-              if (this.navigateStage4Choice) this.navigateStage4Choice(1);
-              return;
-            }
-            // Mover arriba con izquierda: ArrowLeft, A
-            if (k === 'arrowleft' || k === 'a') {
-              if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
-              return;
-            }
-
-            // Confirmar / Elegir opción: ArrowRight, D, Enter, Espacio, F, Q, E, Z, X, C, J, K
-            if (k === 'arrowright' || k === 'd' || k === ' ' || k === 'enter' || k === 'f' || k === 'q' || k === 'e' || k === 'z' || k === 'x' || k === 'c' || k === 'j' || k === 'k') {
-              if (this.confirmStage4Choice) this.confirmStage4Choice();
-              return;
-            }
-          }
         }
+        return;
       }
 
       // Si la cinemática de la rata está activa, cualquier tecla de acción avanza el panel
@@ -595,21 +610,26 @@ class MedellinGame {
   }
 
   setupTouchControls() {
-    const isPointerSupported = typeof window !== 'undefined' && 'PointerEvent' in window;
-
     const bindBtn = (id, onDown, onUp) => {
       const el = document.getElementById(id);
       if (!el) return;
-      let isPressed = false;
+      let lastDownTime = 0;
+      let activeHold = false;
 
       const triggerPress = (e) => {
         if (e) {
           if (e.cancelable && e.preventDefault) e.preventDefault();
           if (e.stopPropagation) e.stopPropagation();
         }
-        if (isPressed) return;
-        isPressed = true;
+        const now = performance.now ? performance.now() : Date.now();
+        // Deduplicar eventos simultáneos (ej. pointerdown + touchstart + mousedown en un mismo toque)
+        // sin bloquear futuros toques si un evento de liberación se perdió en móvil o PC
+        if (now - lastDownTime < 80) return;
+        lastDownTime = now;
+        activeHold = true;
+
         el.classList.add('pressed');
+        if (el.blur) el.blur();
         if (window.retroAudio && window.retroAudio.init) {
           try { window.retroAudio.init(); } catch (err) {}
         }
@@ -617,12 +637,14 @@ class MedellinGame {
       };
 
       const triggerRelease = (e) => {
-        if (e) {
+        if (e && e.type !== 'mouseup' && e.type !== 'touchend' && e.type !== 'pointerup') {
+          // No cancelar scroll global en eventos de ventana
+        } else if (e && e.target === el) {
           if (e.cancelable && e.preventDefault) e.preventDefault();
           if (e.stopPropagation) e.stopPropagation();
         }
-        if (!isPressed) return;
-        isPressed = false;
+        if (!activeHold) return;
+        activeHold = false;
         el.classList.remove('pressed');
         if (onUp) onUp();
       };
@@ -643,10 +665,20 @@ class MedellinGame {
       el.addEventListener('mouseup', triggerRelease);
       el.addEventListener('mouseleave', triggerRelease);
 
-      // Bloquear click y menú contextual para evitar doble ejecución sintética
+      // Liberación global de respaldo por si el dedo/cursor sale del botón antes de soltar
+      window.addEventListener('mouseup', () => { if (activeHold) triggerRelease(); });
+      window.addEventListener('touchend', () => { if (activeHold) triggerRelease(); });
+
+      // Respaldo de click por si algún navegador móvil solo dispara click sintético
       el.addEventListener('click', (e) => {
         if (e.cancelable && e.preventDefault) e.preventDefault();
         if (e.stopPropagation) e.stopPropagation();
+        const now = performance.now ? performance.now() : Date.now();
+        if (now - lastDownTime >= 150) {
+          lastDownTime = now;
+          if (onDown) onDown();
+          if (onUp) setTimeout(onUp, 60);
+        }
       });
       el.addEventListener('contextmenu', (e) => {
         if (e.cancelable && e.preventDefault) e.preventDefault();
@@ -657,11 +689,10 @@ class MedellinGame {
     bindBtn('btnUp', () => {
       if (this.gameState === 'CHAR_SELECT') { this.selectPrevChar(); return; }
       if (this.currentStage === 4) {
-        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
-          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
-          return;
+        if (!this.stage4 && this.initStage4Soterrado) this.initStage4Soterrado();
+        if (this.stage4 && this.stage4.comicStep === 3) {
+          if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
         }
-        if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
         return;
       }
       this.keys.up = true;
@@ -670,11 +701,10 @@ class MedellinGame {
     bindBtn('btnDown', () => {
       if (this.gameState === 'CHAR_SELECT') { this.selectNextChar(); return; }
       if (this.currentStage === 4) {
-        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
-          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
-          return;
+        if (!this.stage4 && this.initStage4Soterrado) this.initStage4Soterrado();
+        if (this.stage4 && this.stage4.comicStep === 3) {
+          if (this.navigateStage4Choice) this.navigateStage4Choice(1);
         }
-        if (this.navigateStage4Choice) this.navigateStage4Choice(1);
         return;
       }
       this.keys.down = true;
@@ -683,7 +713,7 @@ class MedellinGame {
     bindBtn('btnLeft', () => {
       if (this.gameState === 'CHAR_SELECT') { this.selectPrevChar(); return; }
       if (this.currentStage === 4) {
-        // En Nivel 4 no retroceder
+        // En Nivel 4 las flechas izquierda/derecha no cambian historieta ni eligen respuesta
         return;
       }
       this.keys.left = true;
@@ -692,26 +722,24 @@ class MedellinGame {
     bindBtn('btnRight', () => {
       if (this.gameState === 'CHAR_SELECT') { this.selectNextChar(); return; }
       if (this.currentStage === 4) {
-        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
-          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
-        } else {
-          if (this.confirmStage4Choice) this.confirmStage4Choice();
-        }
+        // En Nivel 4 las flechas izquierda/derecha no cambian historieta ni eligen respuesta
         return;
       }
       this.keys.right = true;
     }, () => { this.keys.right = false; this.player.isDashing = false; });
 
-    // D-Pad Touch Container: Soporte para deslizamiento táctil con el pulgar en el contenedor
+    // D-Pad Touch Container: Soporte para toque en los bordes de la cruceta
     const dpadEl = document.querySelector('.gbc-dpad');
     if (dpadEl) {
       let lastDpadTouchTime = 0;
       let activeDpadDir = null;
 
       const handleDpadTouch = (e) => {
-        if (e && e.cancelable && e.preventDefault) e.preventDefault();
         // Si el toque fue directamente sobre uno de los botones, dejar que bindBtn lo procese exclusivamente
         if (e.target && e.target.closest && e.target.closest('.gbc-dpad-btn')) return;
+        // En Nivel 4 no procesar deslizamientos continuos (touchmove) para evitar saltos involuntarios de opción
+        if (this.currentStage === 4 && e.type === 'touchmove') return;
+        if (e && e.cancelable && e.preventDefault) e.preventDefault();
         if (!e.touches || e.touches.length === 0) return;
         const touch = e.touches[0];
         const rect = dpadEl.getBoundingClientRect();
@@ -734,7 +762,7 @@ class MedellinGame {
         }
 
         const now = Date.now();
-        if (dir !== activeDpadDir || now - lastDpadTouchTime > 180) {
+        if (dir !== activeDpadDir || now - lastDpadTouchTime > 220) {
           activeDpadDir = dir;
           lastDpadTouchTime = now;
 
@@ -742,7 +770,9 @@ class MedellinGame {
             const btn = document.getElementById('btnUp');
             if (btn) { btn.classList.add('pressed'); setTimeout(() => btn && btn.classList.remove('pressed'), 120); }
             if (this.currentStage === 4) {
-              if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
+              if (this.stage4 && this.stage4.comicStep === 3 && this.navigateStage4Choice) {
+                this.navigateStage4Choice(-1);
+              }
             } else {
               this.keys.up = true;
             }
@@ -750,27 +780,21 @@ class MedellinGame {
             const btn = document.getElementById('btnDown');
             if (btn) { btn.classList.add('pressed'); setTimeout(() => btn && btn.classList.remove('pressed'), 120); }
             if (this.currentStage === 4) {
-              if (this.navigateStage4Choice) this.navigateStage4Choice(1);
+              if (this.stage4 && this.stage4.comicStep === 3 && this.navigateStage4Choice) {
+                this.navigateStage4Choice(1);
+              }
             } else {
               this.keys.down = true;
             }
           } else if (dir === 'left') {
             if (this.currentStage !== 4) this.keys.left = true;
           } else if (dir === 'right') {
-            if (this.currentStage === 4) {
-              if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
-                if (this.advanceStage4Comic) this.advanceStage4Comic(1);
-              } else {
-                if (this.confirmStage4Choice) this.confirmStage4Choice();
-              }
-            } else {
-              this.keys.right = true;
-            }
+            if (this.currentStage !== 4) this.keys.right = true;
           }
         }
       };
 
-      const handleDpadEnd = (e) => {
+      const handleDpadEnd = () => {
         activeDpadDir = null;
         this.keys.up = false;
         this.keys.down = false;
@@ -784,58 +808,40 @@ class MedellinGame {
       dpadEl.addEventListener('touchcancel', handleDpadEnd, { passive: false });
     }
 
+    const triggerStage4ActionBtn = () => {
+      if (!this.stage4 && this.initStage4Soterrado) this.initStage4Soterrado();
+      if (!this.stage4) return;
+      if (this.stage4.comicStep === 1 || this.stage4.comicStep === 2) {
+        if (this.advanceStage4Comic) this.advanceStage4Comic(1);
+      } else if (this.stage4.comicStep === 3) {
+        if (this.confirmStage4Choice) this.confirmStage4Choice();
+      }
+    };
+
     // Botones de acción Game Boy Color (A, B, Special, Interact, Run, Start, Select)
     bindBtn('btnJump', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
-      if (this.currentStage === 4) {
-        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
-          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
-        } else {
-          if (this.confirmStage4Choice) this.confirmStage4Choice();
-        }
-        return;
-      }
+      if (this.currentStage === 4) { triggerStage4ActionBtn(); return; }
       this.triggerJump();
     });
 
     bindBtn('btnPunch', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
-      if (this.currentStage === 4) {
-        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
-          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
-        } else {
-          if (this.confirmStage4Choice) this.confirmStage4Choice();
-        }
-        return;
-      }
+      if (this.currentStage === 4) { triggerStage4ActionBtn(); return; }
       this.triggerAttack();
     });
 
     bindBtn('btnKick', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
-      if (this.currentStage === 4) {
-        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
-          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
-        } else {
-          if (this.confirmStage4Choice) this.confirmStage4Choice();
-        }
-        return;
-      }
+      if (this.currentStage === 4) { triggerStage4ActionBtn(); return; }
       this.triggerSpecial();
     });
 
     bindBtn('btnRun', () => {
-      if (this.currentStage === 4) {
-        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
-          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
-        } else {
-          if (this.confirmStage4Choice) this.confirmStage4Choice();
-        }
-        return;
-      }
+      if (this.currentStage === 4) { return; }
       this.player.isDashing = !this.player.isDashing;
     });
 
@@ -843,38 +849,22 @@ class MedellinGame {
     bindBtn('btnInteract', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
-      if (this.currentStage === 4) {
-        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
-          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
-        } else {
-          if (this.confirmStage4Choice) this.confirmStage4Choice();
-        }
-        return;
-      }
+      if (this.currentStage === 4) { triggerStage4ActionBtn(); return; }
       this.interact();
     });
 
     bindBtn('btnStart', () => {
       if (this.gameState === 'TITLE') { this.advanceTitleScreen(); return; }
       if (this.gameState === 'CHAR_SELECT') { this.confirmCharSelect(); return; }
-      if (this.currentStage === 4) {
-        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
-          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
-        } else {
-          if (this.confirmStage4Choice) this.confirmStage4Choice();
-        }
-        return;
-      }
+      if (this.currentStage === 4) { triggerStage4ActionBtn(); return; }
       this.interact();
     });
 
     bindBtn('btnSelect', () => {
       if (this.gameState === 'CHAR_SELECT') { this.selectNextChar(); return; }
       if (this.currentStage === 4) {
-        if (this.stage4 && (this.stage4.comicStep === 1 || this.stage4.comicStep === 2)) {
-          if (this.advanceStage4Comic) this.advanceStage4Comic(1);
-        } else {
-          if (this.navigateStage4Choice) this.navigateStage4Choice(1);
+        if (this.stage4 && this.stage4.comicStep === 3 && this.navigateStage4Choice) {
+          this.navigateStage4Choice(1);
         }
         return;
       }
@@ -1353,6 +1343,12 @@ class MedellinGame {
   }
 
   switchStage(stageNum) {
+    if (typeof document !== 'undefined' && document.activeElement && document.activeElement !== this.canvas && document.activeElement.blur) {
+      document.activeElement.blur();
+    }
+    if (this.canvas && this.canvas.focus) {
+      try { this.canvas.focus({ preventScroll: true }); } catch (e) {}
+    }
     this.gameState = 'PLAYING';
     this.currentStage = stageNum;
     this.stageTransitionTimer = 1.0;
@@ -2474,33 +2470,52 @@ class MedellinGame {
     window.retroAudio.init();
     const stickX = gp.axes[0] || 0;
     const stickY = gp.axes[1] || 0;
-    this.keys.left = stickX < -0.3 || gp.buttons[14]?.pressed;
-    this.keys.right = stickX > 0.3 || gp.buttons[15]?.pressed;
-    this.keys.up = stickY < -0.3 || gp.buttons[12]?.pressed;
-    this.keys.down = stickY > 0.3 || gp.buttons[13]?.pressed;
+    const gpLeft = stickX < -0.4 || !!gp.buttons[14]?.pressed;
+    const gpRight = stickX > 0.4 || !!gp.buttons[15]?.pressed;
+    const gpUp = stickY < -0.4 || !!gp.buttons[12]?.pressed;
+    const gpDown = stickY > 0.4 || !!gp.buttons[13]?.pressed;
 
     const b0 = !!gp.buttons[0]?.pressed;
     const b1 = !!(gp.buttons[1]?.pressed || gp.buttons[3]?.pressed);
     const b2 = !!gp.buttons[2]?.pressed;
 
+    if (this.currentStage === 4) {
+      if (this.stage4) {
+        if (this.stage4.comicStep === 1 || this.stage4.comicStep === 2) {
+          if ((b0 && !this.prevGpButtons.b0) || (b2 && !this.prevGpButtons.b2) || (b1 && !this.prevGpButtons.b1)) {
+            if (this.advanceStage4Comic) this.advanceStage4Comic(1);
+          }
+        } else if (this.stage4.comicStep === 3) {
+          if (gpUp && !this.prevGpButtons.up) {
+            if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
+          }
+          if (gpDown && !this.prevGpButtons.down) {
+            if (this.navigateStage4Choice) this.navigateStage4Choice(1);
+          }
+          if ((b0 && !this.prevGpButtons.b0) || (b2 && !this.prevGpButtons.b2) || (b1 && !this.prevGpButtons.b1)) {
+            if (this.confirmStage4Choice) this.confirmStage4Choice();
+          }
+        }
+      }
+      this.prevGpButtons.up = gpUp;
+      this.prevGpButtons.down = gpDown;
+      this.prevGpButtons.b0 = b0;
+      this.prevGpButtons.b1 = b1;
+      this.prevGpButtons.b2 = b2;
+      return;
+    }
+
+    this.keys.left = gpLeft;
+    this.keys.right = gpRight;
+    this.keys.up = gpUp;
+    this.keys.down = gpDown;
+
     if (b0 && !this.prevGpButtons.b0) this.triggerJump();
     if (b2 && !this.prevGpButtons.b2) this.triggerAttack();
     if (b1 && !this.prevGpButtons.b1) this.triggerSpecial();
 
-    if (this.currentStage === 4 && this.stage4 && this.stage4.comicStep === 3) {
-      if (this.keys.up && !this.prevGpButtons.up) {
-        if (this.navigateStage4Choice) this.navigateStage4Choice(-1);
-      }
-      if (this.keys.down && !this.prevGpButtons.down) {
-        if (this.navigateStage4Choice) this.navigateStage4Choice(1);
-      }
-      if ((b0 && !this.prevGpButtons.b0) || (b2 && !this.prevGpButtons.b2) || (b1 && !this.prevGpButtons.b1)) {
-        if (this.confirmStage4Choice) this.confirmStage4Choice();
-      }
-    }
-
-    this.prevGpButtons.up = this.keys.up;
-    this.prevGpButtons.down = this.keys.down;
+    this.prevGpButtons.up = gpUp;
+    this.prevGpButtons.down = gpDown;
     this.prevGpButtons.b0 = b0;
     this.prevGpButtons.b1 = b1;
     this.prevGpButtons.b2 = b2;

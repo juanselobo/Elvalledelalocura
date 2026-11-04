@@ -215,8 +215,12 @@ var Level4 = window.Level4 = {
     return { NODES, ENDINGS };
   },
 
-    advanceStage4Comic(dir = 1) {
+  advanceStage4Comic(dir = 1) {
     if (!this.stage4) this.initStage4Soterrado();
+    const now = performance.now ? performance.now() : Date.now();
+    if (this.stage4._lastActionTime && (now - this.stage4._lastActionTime < 140)) return;
+    this.stage4._lastActionTime = now;
+
     const cur = this.stage4.comicStep || 1;
     // Solo permitir avanzar hacia adelante: nunca retroceder
     const stepDir = Math.max(1, dir || 1);
@@ -230,7 +234,13 @@ var Level4 = window.Level4 = {
 
   navigateStage4Choice(dir = 1) {
     if (!this.stage4) this.initStage4Soterrado();
+    if (this.stage4.comicStep !== 3) return;
     if (this.stage4.gameOver) return;
+
+    const now = performance.now ? performance.now() : Date.now();
+    if (this.stage4._lastNavTime && (now - this.stage4._lastNavTime < 55)) return;
+    this.stage4._lastNavTime = now;
+
     const { NODES } = this.getStage4DialogueData();
     const cur = NODES[this.stage4.currentNodeId || 'N0'] || NODES['N0'];
     const choices = cur.choices || [];
@@ -244,6 +254,11 @@ var Level4 = window.Level4 = {
 
   confirmStage4Choice() {
     if (!this.stage4) this.initStage4Soterrado();
+    if (this.stage4.comicStep !== 3) return;
+    const now = performance.now ? performance.now() : Date.now();
+    if (this.stage4._lastActionTime && (now - this.stage4._lastActionTime < 140)) return;
+    this.stage4._lastActionTime = now;
+
     if (this.stage4.gameOver) {
       this.restartStage4Dialogue();
       return;
@@ -308,10 +323,6 @@ var Level4 = window.Level4 = {
     if (this.stage4._choiceButtons) {
       for (const b of this.stage4._choiceButtons) {
         if (mouseX >= b.x && mouseX <= b.x + b.w && mouseY >= b.y && mouseY <= b.y + b.h) {
-          if (this.stage4.selectedChoiceIndex !== b.index) {
-            this.stage4.selectedChoiceIndex = b.index;
-            if (window.retroAudio && window.retroAudio.playDash) window.retroAudio.playDash();
-          }
           if (this.canvas) this.canvas.style.cursor = 'pointer';
           return;
         }
@@ -336,11 +347,7 @@ var Level4 = window.Level4 = {
         if (this.stage4._restartBtn) {
           const btn = this.stage4._restartBtn;
           if (clickX >= btn.x && clickX <= btn.x + btn.w && clickY >= btn.y && clickY <= btn.y + btn.h) {
-            if (this.stage4.gameOver.isWin) {
-              this.restartStage4Dialogue();
-            } else {
-              this.restartStage4Dialogue();
-            }
+            this.restartStage4Dialogue();
             return;
           }
         }
@@ -352,6 +359,7 @@ var Level4 = window.Level4 = {
         for (let i = 0; i < this.stage4._choiceButtons.length; i++) {
           const b = this.stage4._choiceButtons[i];
           if (clickX >= b.x && clickX <= b.x + b.w && clickY >= b.y && clickY <= b.y + b.h) {
+            this.stage4.selectedChoiceIndex = i;
             this.selectStage4Choice(i);
             return;
           }
@@ -539,7 +547,7 @@ drawStage4Soterrado(ctx) {
       ctx.font = '900 10px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText("▶  [ CLIC / ESPACIO / D-PAD ] CONTINUAR ▶", this.vWidth / 2, by + btnH / 2 + 1);
+      ctx.fillText("▶  [ GOLPE (B) / ACCIÓN (F) ] CONTINUAR ▶", this.vWidth / 2, by + btnH / 2 + 1);
     }
     // =========================================================================
     // IMAGEN 2: CARROS INUNDADOS Y MOTO (Limpia sin textos sobrepuestos)
@@ -570,7 +578,7 @@ drawStage4Soterrado(ctx) {
       ctx.font = '900 10px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText("▶  [ CLIC / ESPACIO / D-PAD ] ENTRAR AL DIÁLOGO ▶", this.vWidth / 2, by + btnH / 2 + 1);
+      ctx.fillText("▶  [ GOLPE (B) / ACCIÓN (F) ] ENTRAR AL DIÁLOGO ▶", this.vWidth / 2, by + btnH / 2 + 1);
     }
     // =========================================================================
     // IMAGEN 3 (DINÁMICA): EL ÁRBOL DE DECISIONES DE LA CONVERSACIÓN
@@ -659,7 +667,7 @@ drawStage4Soterrado(ctx) {
         ctx.font = '900 10.5px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const label = go.isWin ? "▶  [ ENTER / CLIC / D-PAD ] INICIAR PARKOUR DE TECHOS 🌊" : "🔄  [ ENTER / CLIC / D-PAD ] PROBAR OTRA DECISIÓN 🔁";
+        const label = go.isWin ? "▶  [ GOLPE (B) / ACCIÓN (F) ] INICIAR PARKOUR DE TECHOS 🌊" : "🔄  [ GOLPE (B) / ACCIÓN (F) ] PROBAR OTRA DECISIÓN 🔁";
         ctx.fillText(label, btnX + btnW / 2, btnY + btnH / 2);
 
         this.stage4._restartBtn = { x: btnX, y: btnY, w: btnW, h: btnH };
@@ -712,7 +720,7 @@ drawStage4Soterrado(ctx) {
         ctx.fillStyle = '#f1c40f';
         ctx.font = 'bold 9px monospace';
         ctx.textAlign = 'right';
-        ctx.fillText("🎮 [▲/▼] Mover | [GOLPE/SALTO/ACCIÓN/▶] Elegir", boxX + boxW - 16, boxY + 14);
+        ctx.fillText("🎮 [▲/▼] Subir/Bajar | [GOLPE / ACCIÓN] Elegir", boxX + boxW - 16, boxY + 14);
 
         // 2. Texto del Diálogo con sombra negra de alto contraste (para perfecta lectura sobre fondo translúcido)
         ctx.save();
